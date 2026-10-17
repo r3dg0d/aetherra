@@ -1,6 +1,6 @@
 "use client";
 import { useTime, simNow } from "@/lib/store/time";
-import { useNow } from "@/lib/useNow";
+import { useNow, useHydrated } from "@/lib/useNow";
 
 const SPEEDS = [-3600, -60, 1, 10, 60, 600, 3600, 86400];
 const fmtSpeed = (s: number) => (Math.abs(s) >= 86400 ? `${s / 86400}d/s` : Math.abs(s) >= 3600 ? `${s / 3600}h/s` : Math.abs(s) >= 60 ? `${s / 60}m/s` : `${s}×`);

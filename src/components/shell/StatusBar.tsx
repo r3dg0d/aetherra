@@ -1,7 +1,7 @@
 "use client";
 import { useView } from "@/lib/store/app";
 import { useTime, simNow, timeClass } from "@/lib/store/time";
-import { useNow } from "@/lib/useNow";
+import { useNow, useHydrated } from "@/lib/useNow";
 import { formatLat, formatLon } from "@/lib/astro/coords";
 import { DataBadge } from "./DataBadge";
 
@@ -13,6 +13,7 @@ function fmtDist(km: number) {
 
 export function StatusBar() {
   const real = useNow(250);
+  const hydrated = useHydrated();
   const t = useTime();
   const sim = simNow(t, real);
   const { camera, cursor, dataClass, dataNote } = useView();
@@ -23,7 +24,7 @@ export function StatusBar() {
       <div className="glass pointer-events-auto flex max-w-full items-center gap-4 overflow-x-auto px-4 py-2 text-[11px] mono text-starlight/80" role="status" aria-live="off">
         <span className="flex items-center gap-2 whitespace-nowrap">
           <span className="label">UTC</span>
-          <span>{iso.slice(0, 10)} {iso.slice(11, 19)}</span>
+          <span suppressHydrationWarning>{hydrated ? `${iso.slice(0, 10)} ${iso.slice(11, 19)}` : "—"}</span>
           {t.mode !== "live" && <span className="text-violet">×{t.speed}{t.mode === "paused" ? " ⏸" : ""}</span>}
         </span>
         <span className="hidden whitespace-nowrap sm:inline"><span className="label mr-2">LAT</span>{camera ? formatLat(cursor?.lat ?? camera.lat) : "—"}</span>

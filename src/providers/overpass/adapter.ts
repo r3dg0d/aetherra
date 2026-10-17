@@ -27,7 +27,7 @@ export async function getStreetlights(b: { s: number; w: number; n: number; e: n
   return cached(`overpass:lamps:${bb.s},${bb.w},${bb.n},${bb.e}`, 24 * 3600_000, async () => {
     const q = `[out:json][timeout:25];node["highway"="street_lamp"](${bb.s},${bb.w},${bb.n},${bb.e});out 5000;`;
     const j = await fetchJson<{ elements: { id: number; lat: number; lon: number; tags?: Record<string, string> }[] }>(process.env.OVERPASS_URL ?? "https://overpass-api.de/api/interpreter", {
-      provider: OVERPASS_META.id, method: "POST", body: new URLSearchParams({ data: q }).toString(), headers: { "Content-Type": "application/x-www-form-urlencoded" }, timeoutMs: 30000, retries: 0,
+      provider: OVERPASS_META.id, method: "POST", body: new URLSearchParams({ data: q }).toString(), headers: { "Content-Type": "application/x-www-form-urlencoded" }, timeoutMs: 55000, retries: 0,
     });
     return j.elements.map((e) => ({ id: e.id, lat: e.lat, lon: e.lon, lampType: e.tags?.["lamp_type"] ?? e.tags?.["light:method"] ?? null }));
   });

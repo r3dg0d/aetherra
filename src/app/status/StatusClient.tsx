@@ -39,7 +39,7 @@ export function StatusClient() {
           {!d && !err && <p className="text-sm text-starlight/50">Loading…</p>}
           {d?.providers.map((p) => (
             <article key={p.id} className="glass p-4 text-sm">
-              <div className="flex flex-wrap items-center gap-2"><h3 className="font-medium">{p.name}</h3><DataBadge value={p.dataClass} size="xs" /><span className="text-starlight/50">{p.operator}</span>
+              <div className="flex flex-wrap items-center gap-2"><h3 className="font-medium">{p.name}</h3><DataBadge value={(p.status as { state?: string } | undefined)?.state === "unconfigured" && p.requiresCredentials ? "UNAVAILABLE" : p.dataClass} size="xs" /><span className="text-starlight/50">{p.operator}</span>
                 <a className="ml-auto text-celestial" href={p.homepage} target="_blank" rel="noreferrer">Homepage ↗</a></div>
               <p className="mt-1 text-starlight/70">{p.attribution}</p>
               <p className="mt-1 text-[12px] text-starlight/50">Licence: {p.license}{p.termsUrl && <> · <a className="text-celestial" href={p.termsUrl} target="_blank" rel="noreferrer">terms</a></>}{p.rateLimit && <> · Rate limit: {p.rateLimit}</>} · Expected refresh {p.expectedRefreshSeconds}s</p>

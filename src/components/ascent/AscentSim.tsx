@@ -19,10 +19,12 @@ const CAMS = ["chase", "wide", "ground", "orbital"] as const;
 type Cam = (typeof CAMS)[number];
 const toScene = (v: [number, number, number]): [number, number, number] => [v[0] / 1000, v[2] / 1000, -v[1] / 1000];
 
-interface Sim { s: SimState; acc: number; warp: number; paused: boolean; countdown: number | null; assist: boolean; events: string[]; inserted: boolean; history: [number, number, number][] }
+interface Sim { s: SimState; acc: number; warp: number; paused: boolean; countdown: number | null; t0: number | null; assist: boolean; events: string[]; inserted: boolean; history: [number, number, number][] }
+
+const met = (S: Sim) => (S.t0 == null ? 0 : S.s.t - S.t0).toFixed(0);
 
 function freshSim(site = SITES[0]): Sim {
-  return { s: initialState(site.lat, site.lon), acc: 0, warp: 1, paused: false, countdown: null, assist: false, events: ["Vehicle on pad. Press SPACE to start the T−10 countdown."], inserted: false, history: [] };
+  return { s: initialState(site.lat, site.lon), acc: 0, warp: 1, paused: false, countdown: null, t0: null, assist: false, events: ["Vehicle on pad. Press SPACE to start the T−10 countdown."], inserted: false, history: [] };
 }
 
 function sunFor(p: THREE.Vector3): [number, number, number] {
@@ -51,16 +53,17 @@ function World({ sim, cam, onHud }: { sim: React.RefObject<Sim>; cam: Cam; onHud
     if (!S.paused) {
       if (S.countdown != null) {
         S.countdown -= dt;
-        if (S.countdown <= 0) { S.countdown = null; S.s = { ...S.s, engineOn: true, throttle: 1 }; S.events.unshift("T−0: ignition and liftoff."); }
+        if (S.countdown <= 0) { S.countdown = null; S.t0 = S.s.t; S.s = { ...S.s, engineOn: true, throttle: 1 }; S.events.unshift("T−0: ignition and liftoff."); }
       }
       if (S.s.landedOrCrashed !== "crashed") {
-        if (S.assist) S.s = autopilot(S.s);
         const prevStage = S.s.stage;
+        // Assist never ignites on the pad by itself: it takes over only after T−0.
+        if (S.assist && S.t0 != null) S.s = autopilot(S.s);
         const r = advance(S.s, S.acc, dt, S.warp);
         S.s = r.state; S.acc = r.accumulator;
-        if (S.s.stage !== prevStage) S.events.unshift(`Stage separation at T+${S.s.t.toFixed(0)} s.`);
+        if (S.s.stage !== prevStage) S.events.unshift(`Stage separation at T+${met(S)} s.`);
         if (S.s.landedOrCrashed === "crashed") S.events.unshift("Vehicle impacted the surface. Press R to reset.");
-        if (!S.inserted && isOrbitInserted(S.s.r, S.s.v)) { S.inserted = true; S.events.unshift(`ORBIT ACHIEVED at T+${S.s.t.toFixed(0)} s (periapsis > 140 km).`); }
+        if (!S.inserted && isOrbitInserted(S.s.r, S.s.v)) { S.inserted = true; S.events.unshift(`ORBIT ACHIEVED at T+${met(S)} s (periapsis > 140 km).`); }
         if (S.history.length === 0 || state.clock.elapsedTime - lastHud.current > 0.5) { S.history.push(S.s.r); if (S.history.length > 4000) S.history.shift(); }
       }
     }
@@ -130,7 +133,7 @@ export default function AscentSim() {
       if (e.code === "Space") {
         e.preventDefault();
         if (S.s.landedOrCrashed === "pad" && !S.s.engineOn && S.countdown == null) { S.countdown = 10; S.events.unshift("Countdown started: T−10 s."); }
-        else if (S.s.engineOn || S.s.t > 0) { const before = S.s.stage; S.s = stageSeparate(S.s); if (S.s.stage !== before) { S.s = { ...S.s, engineOn: S.s.prop[S.s.stage] > 0 }; S.events.unshift(`Manual staging at T+${S.s.t.toFixed(0)} s.`); } }
+        else if (S.t0 != null) { const before = S.s.stage; S.s = stageSeparate(S.s); if (S.s.stage !== before) { S.s = { ...S.s, engineOn: S.s.prop[S.s.stage] > 0 }; S.events.unshift(`Manual staging at T+${met(S)} s.`); } }
       }
       if (e.code === "KeyR") { sim.current = freshSim(site); }
       if (e.code === "KeyC") { setCam((c) => CAMS[(CAMS.indexOf(c) + 1) % CAMS.length]); }
@@ -140,7 +143,7 @@ export default function AscentSim() {
       if (e.code === "Period") S.warp = Math.min(1000, S.warp * (S.warp < 4 ? 2 : 5));
       if (e.code === "Comma") S.warp = Math.max(1, S.warp / (S.warp <= 4 ? 2 : 5));
       if (e.code === "KeyX") S.s = { ...S.s, throttle: 0 };
-      if (e.code === "KeyZ") S.s = { ...S.s, throttle: 1, engineOn: S.s.t > 0 && S.s.prop[S.s.stage] > 0 ? true : S.s.engineOn };
+      if (e.code === "KeyZ") S.s = { ...S.s, throttle: 1, engineOn: S.t0 != null && S.s.prop[S.s.stage] > 0 ? true : S.s.engineOn };
     };
     const up = (e: KeyboardEvent) => keys.current.delete(e.code);
     window.addEventListener("keydown", down); window.addEventListener("keyup", up);
@@ -154,7 +157,7 @@ export default function AscentSim() {
       if (k.has("KeyS")) pitchDeg = Math.min(90, pitchDeg + 0.5);
       if (k.has("KeyA")) headingDeg = (headingDeg - 0.5 + 360) % 360;
       if (k.has("KeyD")) headingDeg = (headingDeg + 0.5) % 360;
-      const engineOn = S.s.engineOn || (throttle > 0 && S.s.t > 0 && S.s.prop[S.s.stage] > 0 && S.countdown == null && S.s.landedOrCrashed !== "pad");
+      const engineOn = S.s.engineOn || (throttle > 0 && S.t0 != null && S.s.prop[S.s.stage] > 0);
       S.s = { ...S.s, throttle, pitchDeg, headingDeg, engineOn };
     }, 20);
     return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); clearInterval(t); };
@@ -173,14 +176,14 @@ export default function AscentSim() {
     <div className="relative h-full w-full bg-space">
       <Canvas camera={{ fov: 50, near: 0.0005, far: 400000 }} gl={{ logarithmicDepthBuffer: true, antialias: true }} aria-label="ASCENT 3D flight view">
         <color attach="background" args={["#030409"]} />
-        <World sim={sim} cam={cam} onHud={(x) => setHud({ ...x, s: x.s })} key={site.name} />
+        <World sim={sim} cam={cam} onHud={(x) => setHud({ ...x, events: [...x.events] })} key={site.name} />
       </Canvas>
       {map && hud && <div className="absolute inset-0 z-10 bg-space/80"><MapView sim={hud} /></div>}
       <div className="absolute left-4 top-20 z-20 w-[270px] space-y-2">
         <div className="glass p-3 text-[12px]">
           <div className="mb-1 flex items-center justify-between"><span className="label">ASCENT · AETHER-1</span><DataBadge value="SIMULATED" size="xs" /></div>
           {hud?.countdown != null && <p className="mono text-[26px] text-sim">T−{Math.ceil(hud.countdown)}</p>}
-          {s && <p className="mono text-[13px]">MET T+{Math.max(0, s.t).toFixed(1)} s</p>}
+          {hud && <p className="mono text-[13px]">MET {hud.t0 == null ? "T−" + (hud.countdown != null ? Math.ceil(hud.countdown) : "--") : `T+${(hud.s.t - hud.t0).toFixed(1)}`} s</p>}
           <dl className="mono mt-1 grid grid-cols-2 gap-y-0.5 text-[11px]">
             <dt className="text-starlight/50">Altitude</dt><dd className="text-right">{km(h)}</dd>
             <dt className="text-starlight/50">Velocity (inertial)</dt><dd className="text-right">{s ? vec.norm(s.v).toFixed(0) : 0} m/s</dd>
