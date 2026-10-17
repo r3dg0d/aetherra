@@ -5,6 +5,7 @@ import { StatusBar } from "./StatusBar";
 import { SearchPalette } from "./SearchPalette";
 import { SettingsPanel } from "./SettingsPanel";
 import { PerfPanel } from "./PerfPanel";
+import { VoicePanel } from "@/components/voice/VoicePanel";
 import { useApp, useView } from "@/lib/store/app";
 import { useAudioSystem } from "@/lib/audio/useAudio";
 
@@ -13,6 +14,7 @@ export { useReducedMotion } from "@/lib/useReducedMotion";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [search, setSearch] = useState(false);
   const [settings, setSettings] = useState(false);
+  const [voice, setVoice] = useState(false);
   const reduced = useApp((s) => s.reducedMotion);
   const hideUi = useView((s) => s.hideUi);
   useAudioSystem();
@@ -39,11 +41,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <a href="#main" data-tap-exempt className="sr-only focus:min-h-[44px] focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-midnight focus:px-3 focus:py-1">Skip to content</a>
-      <Nav onSearch={() => setSearch(true)} onSettings={() => setSettings((s) => !s)} />
+      <Nav onSearch={() => setSearch(true)} onSettings={() => setSettings((s) => !s)} onVoice={() => setVoice(true)} />
       <main id="main" className="fixed inset-0">{children}</main>
       <StatusBar />
       <PerfPanel />
-      <SearchPalette open={search} onClose={() => setSearch(false)} />
+      <SearchPalette open={search} onClose={() => setSearch(false)} onVoice={() => { setSearch(false); setVoice(true); }} />
+      <VoicePanel open={voice} onClose={() => setVoice(false)} />
       <SettingsPanel open={settings} onClose={() => setSettings(false)} />
       {hideUi && (
         <button className="show-ui-btn fixed right-3 z-50 rounded-full border border-white/10 bg-black/30 px-3 py-2 text-[11px] text-starlight/60 backdrop-blur hover:text-starlight" style={{ bottom: "calc(env(safe-area-inset-bottom) + 12px)" }} onClick={() => useView.getState().setHideUi(false)} aria-label="Show interface">

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { NotificationCenter } from "./NotificationCenter";
 import { useApp, useView } from "@/lib/store/app";
 import { audio } from "@/lib/audio/engine";
+import { VoiceButton } from "@/components/voice/VoicePanel";
 
 const LINKS = [
   { href: "/", label: "EXPLORE" },
@@ -38,7 +39,7 @@ export function MuteButton({ className = "" }: { className?: string }) {
   );
 }
 
-export function Nav({ onSearch, onSettings }: { onSearch: () => void; onSettings: () => void }) {
+export function Nav({ onSearch, onSettings, onVoice }: { onSearch: () => void; onSettings: () => void; onVoice: () => void }) {
   const path = usePathname();
   const [menu, setMenu] = useState(false);
   // Close the mobile menu after navigation.
@@ -69,6 +70,7 @@ export function Nav({ onSearch, onSettings }: { onSearch: () => void; onSettings
           <span className="hidden xl:inline">Search universe</span>
           <kbd className="mono hidden rounded border border-violet/30 px-1 text-[10px] xl:inline">⌘K</kbd>
         </button>
+        <VoiceButton onClick={onVoice} />
         <MuteButton />
         <button className="glass icon-btn hidden md:inline-flex" onClick={() => useView.getState().setHideUi(true)} aria-label="Hide interface for screenshots (H)" title="Hide UI (H)" data-testid="hide-ui">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /><path d="M3 3l18 18" /></svg>
@@ -88,6 +90,7 @@ export function Nav({ onSearch, onSettings }: { onSearch: () => void; onSettings
             ))}
           </ul>
           <div className="mt-2 grid grid-cols-2 gap-1 border-t border-violet/15 pt-2">
+            <button className="flex min-h-[48px] items-center rounded-xl px-4 text-[13px] text-starlight/75 active:bg-nebula/15" onClick={() => { setMenu(false); onVoice(); }}>AETHERRA Voice</button>
             <button className="flex min-h-[48px] items-center rounded-xl px-4 text-[13px] text-starlight/75 active:bg-nebula/15" onClick={() => { setMenu(false); onSettings(); }}>Settings</button>
             <button className="flex min-h-[48px] items-center rounded-xl px-4 text-[13px] text-starlight/75 active:bg-nebula/15" onClick={() => { setMenu(false); useView.getState().setHideUi(true); }}>Hide UI</button>
             <Link href="/status" className="col-span-2 flex min-h-[48px] items-center rounded-xl px-4 text-[13px] text-starlight/75 active:bg-nebula/15">Data sources &amp; status</Link>

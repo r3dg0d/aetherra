@@ -44,6 +44,9 @@ export default function SkyPage() {
     const apply = () => {
     const sp = new URLSearchParams(window.location.search);
     const body = sp.get("body") as BodyName | null, hip = sp.get("hip"), con = sp.get("con");
+    // Voice layer toggles: ?layers=lines-off,labels-on
+    const layers = sp.get("layers");
+    if (layers) setOpt((o) => { const n = { ...o }; for (const part of layers.split(",")) { const [k, v] = part.split("-"); if (k in n && (v === "on" || v === "off")) (n as unknown as Record<string, boolean>)[k] = v === "on"; } return n; });
     // Imagery deep link: ?gallery=mars[&source=rover|archive][&rover=curiosity][&q=junocam]
     const g = sp.get("gallery");
     const gTarget = g === "1" && body ? bodyToTarget(body) : targetById(g)?.id;

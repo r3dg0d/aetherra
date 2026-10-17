@@ -17,7 +17,7 @@ const PAGES: Result[] = [
   { type: "view", label: "Data sources & provider status", href: "/status" },
 ];
 
-export function SearchPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function SearchPalette({ open, onClose, onVoice }: { open: boolean; onClose: () => void; onVoice?: () => void }) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [stars, setStars] = useState<StarRow[]>([]);
@@ -87,6 +87,7 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-space/50 pt-[12vh] backdrop-blur-sm" onMouseDown={onClose}>
       <div className="glass glass-strong fade-in w-[min(640px,92vw)] p-2" role="dialog" aria-label="Universal search" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1">
         <input
           ref={inputRef} value={q} placeholder="Search stars, planets, constellations, satellites, launches, places…" className="input w-full border-0 bg-transparent px-3 py-3 text-[15px]"
           aria-label="Search query" role="combobox" aria-expanded aria-controls="search-results"
@@ -98,6 +99,8 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
             if (e.key === "Enter" && results[sel]) go(results[sel]);
           }}
         />
+        {onVoice && <button className="icon-btn shrink-0" onClick={onVoice} aria-label="Use voice search (AETHERRA Voice)" title="Voice search" data-testid="search-voice"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg></button>}
+        </div>
         <ul id="search-results" role="listbox" className="scroll-thin max-h-[50vh] overflow-y-auto border-t hairline pt-1">
           {results.map((r, i) => (
             <li key={`${r.type}-${r.href}-${i}`} role="option" aria-selected={i === sel}>

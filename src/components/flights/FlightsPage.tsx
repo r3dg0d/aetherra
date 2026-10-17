@@ -29,7 +29,10 @@ export default function FlightsPage() {
     if (!C || !el.current || v.current) return;
     const { viewer } = createViewer(C, el.current, { baseLayer: osmLayer(C) });
     v.current = viewer;
-    viewer.camera.setView({ destination: C.Cartesian3.fromDegrees(8.5, 48, 1.6e6) });
+    // Deep link / voice: ?lat&lon centres the map (e.g. "flights near London").
+    const fsp = new URLSearchParams(window.location.search);
+    const flat = Number(fsp.get("lat")), flon = Number(fsp.get("lon"));
+    viewer.camera.setView({ destination: C.Cartesian3.fromDegrees(Number.isFinite(flon) && fsp.get("lon") ? flon : 8.5, Number.isFinite(flat) && fsp.get("lat") ? flat : 48, 1.6e6) });
     const h = new C.ScreenSpaceEventHandler(viewer.scene.canvas);
     h.setInputAction((e: { position: CesiumNS.Cartesian2 }) => { const p = viewer.scene.pick(e.position); const id = p?.id?.id as string | undefined; setSel(id?.startsWith("ac:") ? id.slice(3) : null); }, C.ScreenSpaceEventType.LEFT_CLICK);
     const onCam = () => { const g = viewer.camera.positionCartographic; useView.getState().setCamera({ lat: C.Math.toDegrees(g.latitude), lon: C.Math.toDegrees(g.longitude), altKm: g.height / 1000, distanceKm: g.height / 1000 + 6371 }); };

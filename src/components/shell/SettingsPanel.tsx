@@ -52,6 +52,12 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
           <Toggle label="Ambient drones" checked={s.ambient} onChange={s.setAmbient} />
           <Toggle label="Interface ticks" checked={s.uiSounds} onChange={s.setUiSounds} />
         </fieldset>
+        <fieldset className="mt-2 border-t border-violet/15 pt-2">
+          <legend className="text-[13px]">AETHERRA Voice <span className="text-[10px] text-starlight/45">(simulated assistant)</span></legend>
+          <Toggle label="Voice replies" hint="Spoken answers. Still requires sound on; reduced motion silences them." checked={s.voiceReplies} onChange={s.setVoiceReplies} testId="voice-replies-toggle" />
+          <label className="flex min-h-[44px] items-center justify-between gap-3 text-[13px]"><span>Voice rate</span><input type="range" min={0.6} max={1.5} step={0.1} value={s.voiceRate} onChange={(e) => s.setVoiceRate(Number(e.target.value))} className="w-36" aria-label="Voice rate" /></label>
+          <label className="flex min-h-[44px] items-center justify-between gap-3 text-[13px]"><span>Voice pitch</span><input type="range" min={0.5} max={1.6} step={0.1} value={s.voicePitch} onChange={(e) => s.setVoicePitch(Number(e.target.value))} className="w-36" aria-label="Voice pitch" /></label>
+        </fieldset>
         <p className="mt-2 text-[10px] text-starlight/45">Press <kbd className="mono">H</kbd> (or the eye button) to hide the interface for screenshots.</p>
         <Link href="/status" className="mt-2 inline-flex min-h-[44px] items-center text-[12px] text-celestial" onClick={onClose}>Data sources, attribution &amp; provider status →</Link>
       </div>

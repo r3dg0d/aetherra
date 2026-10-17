@@ -15,7 +15,8 @@
     "screenshots": "node scripts/screenshots.mjs",
     "e2e": "playwright test",
     "screenshots:polish": "node scripts/screenshots-polish.mjs",
-    "screenshots:imagery": "node scripts/screenshots-imagery.mjs"
+    "screenshots:imagery": "node scripts/screenshots-imagery.mjs",
+    "screenshots:voice": "node scripts/screenshots-voice.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.10",
