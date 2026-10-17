@@ -14,9 +14,19 @@ import { swimStatus } from "@/providers/faa/swim.adapter";
 
 /** Provider metadata + health. Never returns secret values, only whether env vars are set. */
 export async function GET() {
-  const providers = listProviders().map((p) => ({ ...p.meta, envVars: p.meta.envVars.map((name) => ({ name, set: !!process.env[name] })), status: p.status }));
-  let launches = null;
+  let launches: { upcoming: Awaited<ReturnType<typeof feedStatus>>; previous: Awaited<ReturnType<typeof feedStatus>> } | { error: string } | null = null;
   try { launches = { upcoming: await feedStatus("upcoming"), previous: await feedStatus("previous") }; } catch (e) { launches = { error: (e as Error).message }; }
+  const providers = listProviders().map((p) => {
+    let status = p.status;
+    // LL2 is fetched on a budget and persisted. After a restart the in-memory status is "idle" until the next fetch,
+    // so derive it from the persisted snapshot instead of showing a misleading idle state.
+    if (p.meta.id === "ll2" && launches && "upcoming" in launches && status.state === "idle") {
+      const up = launches.upcoming;
+      if (up.fetchedAt) status = { ...status, state: up.stale ? "degraded" : "ok", lastSuccess: up.fetchedAt, lastError: up.lastError ?? undefined, note: `From persisted snapshot (${up.dataClass}); next fetch when the cache expires.` };
+      else if (up.lastError) status = { ...status, state: "down", lastError: up.lastError };
+    }
+    return { ...p.meta, envVars: p.meta.envVars.map((name) => ({ name, set: !!process.env[name] })), status };
+  });
   return json({
     providers, launches, webPush: { configured: vapidConfigured() }, faaSwim: swimStatus(),
     cesiumIon: { configured: !!process.env.NEXT_PUBLIC_CESIUM_ION_TOKEN },
