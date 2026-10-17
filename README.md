@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AETHERRA: The Living Atlas of Earth and Space
 
-## Getting Started
+AETHERRA is a cinematic, data-honest web atlas. It shows the real sky, Earth, satellites, aircraft and rocket launches, plus a playable orbital ascent simulator. Every number on screen carries a provenance class: **LIVE**, **DELAYED**, **HISTORICAL**, **PREDICTED**, **SIMULATED** or **UNAVAILABLE**. Simulated data is never shown as live.
 
-First, run the development server:
+| Mode | What it does | Data |
+|---|---|---|
+| **Explore** (`/`) | A 3D Earth with real day/night, city lights, the Sun, the Moon at true scaled distance, stars rotated by sidereal time, the ISS from SGP4 and the next launch countdown | astronomy-engine (PREDICTED), CelesTrak (PREDICTED), LL2 (LIVE) |
+| **Sky** (`/sky`) | A fisheye planetarium for any observer/time: 5,044 stars (Hipparcos via d3-celestial), 88 constellations, Sun/Moon/planets, rise/set, inspect panel | Computed locally |
+| **Earth** (`/earth`) | A CesiumJS globe with OSM, NASA GIBS daily imagery (date picker, split compare), launch sites, OSM street lamps, official webcam directory, deep links | GIBS, OSM, Overpass |
+| **Orbit** (`/orbit`) | Satellite groups propagated with SGP4 in a Web Worker, ground tracks, orbit lines, search, pass predictions for your observer | CelesTrak GP |
+| **Flights** (`/flights`) | OpenSky state vectors with dead reckoning (solid = observed, dashed = predicted), an aircraft panel and a clearly labelled SIMULATED demo mode | OpenSky; FAA SWIM stub = UNAVAILABLE |
+| **Launches** (`/launches`) | Mission Control: real launches, precision-aware countdowns, filters, history, ICS calendar, in-app inbox, Web Push reminders, change detection (NET slips, scrubs, status) | Launch Library 2 |
+| **Ascent** (`/ascent`) | Fly the fictional two-stage AETHER-1 to orbit: RK4 physics, gravity, drag, staging, apo/peri HUD, assist autopilot, camera modes, map view | SIMULATED |
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install            # also copies Cesium static assets to public/cesium
+cp .env.example .env.local   # optional; everything has a fallback
+npm run dev            # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Production:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build && npm start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Checks:
 
-## Learn More
+```bash
+npm run lint && npm test && npm run typecheck
+npm run screenshots    # needs a running server and Chrome at /usr/bin/google-chrome (CHROME_PATH to override)
+```
 
-To learn more about Next.js, take a look at the following resources:
+- **Database:** with `DATABASE_URL` the app uses Postgres via Drizzle. Without it, it falls back to embedded PGlite in `./.data/pglite`. Migrations in `drizzle/` run automatically.
+- **Push:** Web Push needs VAPID keys (`npx web-push generate-vapid-keys`). Without them, reminders still land in the in-app inbox.
+- **Scheduler:** an in-process scheduler (`src/instrumentation.ts`) refreshes launches within the LL2 rate budget, enqueues reminders and change alerts, and delivers them every 60 s. Disable it with `AETHERRA_SCHEDULER=off`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Keyboard
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Global:** `⌘K` or `/` opens search.
+- **Ascent:**
+  - `Space`: countdown, then staging
+  - `Shift`/`Ctrl`: throttle up/down. `Z`/`X`: full/cut
+  - `W`/`S`: pitch. `A`/`D`: heading
+  - `P`: assist
+  - `C`: camera
+  - `M`: map
+  - `,` `.`: time warp
+  - `R`: reset
+  - `Esc`: pause
 
-## Deploy on Vercel
+## Docs
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [Architecture](docs/architecture.md)
+- [Providers](docs/providers.md)
+- [API contracts](docs/api.md)
+- [Privacy](docs/privacy.md)
+- [Attribution & licences](docs/attribution.md)
+- [Known limitations](docs/known-limitations.md)
+- [Roadmap](docs/roadmap.md)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Stack
+
+- Next.js 16 (App Router, Turbopack), TypeScript, Tailwind CSS 4, Zustand
+- three.js with @react-three/fiber and drei
+- CesiumJS
+- astronomy-engine and satellite.js
+- Drizzle ORM (Postgres / PGlite), zod, web-push
+- Vitest, Playwright (screenshots)
