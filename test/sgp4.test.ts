@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import * as sat from "satellite.js";
+import * as sat from "@/lib/orbit/satellite";
 import { satrecFromTle, epochOf, tleAge, positionAt, predictPasses, periodMinutes } from "@/lib/orbit/sgp4";
 
 // Vallado et al. (2006) "Revisiting Spacetrack Report #3", verification case 00005 (TEME, km, km/s).

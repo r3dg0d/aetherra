@@ -113,7 +113,7 @@ export function step(s: SimState, dt: number, veh: Vehicle = AETHER_1, f?: Force
   let v = add(s.v, mul(add(add(k1.a, mul(add(k2.a, k3.a), 2)), k4.a), dt / 6));
   const prop = [...s.prop];
   prop[s.stage] = Math.max(0, prop[s.stage] - k1.mdot * dt);
-  let status = s.landedOrCrashed;
+  let status: SimState["landedOrCrashed"] = s.landedOrCrashed;
   // Ground contact: on the pad before liftoff (thrust < weight) we stay put, co-rotating.
   if (altitude(r) <= 0) {
     if (status === "pad" || s.t < 5) {

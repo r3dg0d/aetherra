@@ -4,7 +4,7 @@ export interface Constellation { id: string; name: string; gen: string; rank: nu
 
 let starsP: Promise<StarCatalog> | null = null;
 let consP: Promise<{ constellations: Constellation[] }> | null = null;
-export const loadStars = () => (starsP ??= fetch("/data/stars.json").then((r) => r.json()));
+export const loadStars = (): Promise<StarCatalog> => (starsP ??= fetch("/data/stars.json").then((r) => r.json()));
 export const loadConstellations = () => (consP ??= fetch("/data/constellations.json").then((r) => r.json()));
 
 /** Approximate star colour from B−V index (Ballesteros 2012 temperature → blackbody RGB approximation). */

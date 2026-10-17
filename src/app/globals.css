@@ -1,26 +1,67 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-space: #030409;
+  --color-midnight: #080F20;
+  --color-nebula: #7956FF;
+  --color-violet: #A78BFA;
+  --color-celestial: #52BFFF;
+  --color-starlight: #F4F7FF;
+  --color-teal: #42E2D0;
+  --color-sim: #FFB454;
+  --color-alert: #FF6B81;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-jb), ui-monospace, SFMono-Regular, monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+:root { color-scheme: dark; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html, body { background: #030409; color: #F4F7FF; height: 100%; }
+body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; overflow: hidden; }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Thin translucent glass panel */
+.glass {
+  background: linear-gradient(180deg, rgba(8, 15, 32, 0.62), rgba(3, 4, 9, 0.55));
+  border: 1px solid rgba(167, 139, 250, 0.16);
+  box-shadow: 0 0 0 0.5px rgba(244, 247, 255, 0.04) inset, 0 12px 40px -12px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-radius: 14px;
 }
+.glass-strong { background: rgba(8, 15, 32, 0.86); }
+.label { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(244, 247, 255, 0.5); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.hairline { border-color: rgba(167, 139, 250, 0.14); }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 12px;
+  border: 1px solid rgba(167, 139, 250, 0.28); color: #F4F7FF; background: rgba(121, 86, 255, 0.08);
+  transition: background 160ms ease, border-color 160ms ease;
+}
+.btn:hover { background: rgba(121, 86, 255, 0.22); border-color: rgba(167, 139, 250, 0.6); }
+.btn:focus-visible, a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #52BFFF; outline-offset: 2px; }
+.btn-primary { background: rgba(121, 86, 255, 0.35); border-color: rgba(167, 139, 250, 0.7); }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.input { background: rgba(3, 4, 9, 0.6); border: 1px solid rgba(167, 139, 250, 0.22); border-radius: 8px; padding: 6px 10px; font-size: 13px; color: #F4F7FF; }
+.input::placeholder { color: rgba(244, 247, 255, 0.35); }
+select.input option { background: #080F20; }
+.scroll-thin::-webkit-scrollbar { width: 6px; }
+.scroll-thin::-webkit-scrollbar-thumb { background: rgba(167, 139, 250, 0.25); border-radius: 3px; }
+
+@keyframes logo-in { 0% { opacity: 0; letter-spacing: 0.9em; filter: blur(8px); } 60% { opacity: 1; filter: blur(0); } 100% { opacity: 1; letter-spacing: 0.42em; } }
+@keyframes fade-out { to { opacity: 0; visibility: hidden; } }
+@keyframes fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.intro { animation: fade-out 900ms ease 2.6s forwards; }
+.intro-logo { animation: logo-in 2.4s cubic-bezier(.2,.7,.1,1) both; }
+.fade-in { animation: fade-in 500ms ease both; }
+.live-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
+  .intro { display: none; }
+}
+html.reduce-motion *, html.reduce-motion *::before { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
+html.reduce-motion .intro { display: none; }
+
+.cesium-viewer-bottom, .cesium-credit-logoContainer { display: none !important; }
+.cesium-widget-credits { font-size: 9px !important; opacity: 0.55; }

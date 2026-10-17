@@ -1,4 +1,4 @@
-import * as sat from "satellite.js";
+import * as sat from "@/lib/orbit/satellite";
 
 export type SatRec = sat.SatRec;
 export type OmmLike = Parameters<typeof sat.json2satrec>[0];
