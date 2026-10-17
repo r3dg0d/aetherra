@@ -38,7 +38,7 @@ describe("LL2 normalization", () => {
     const raw = Ll2LaunchSchema.parse({ ...fixture.results[0], launch_service_provider: { name: "SpaceX", abbrev: "SpX", type: "Commercial" }, mission: { ...fixture.results[0].mission, agencies: [{ name: "National Aeronautics and Space Administration", abbrev: "NASA" }, { name: "SpaceX", abbrev: "SpX" }] } });
     const r = splitOperatorAndCustomers(raw);
     expect(r.operatorName).toBe("SpaceX");
-    expect(r.customers).toEqual(["National Aeronautics and Space Administration"]);
+    expect(r.customers).toEqual(["NASA"]);
   });
   it("parses ISO-8601 timeline durations", () => {
     expect(parseIsoDuration("PT1M56S")).toBe(116);

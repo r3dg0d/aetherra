@@ -46,7 +46,7 @@ export function matches(sub: { scope: string; target: string | null }, l: { id: 
   if (sub.scope === "launch") return sub.target === l.id;
   if (sub.scope === "operator") {
     const t = (sub.target ?? "").toLowerCase();
-    return [l.operatorName, l.operatorAbbrev, ...l.customers].some((n) => n && n.toLowerCase() === t);
+    return t.length > 1 && [l.operatorName, l.operatorAbbrev, ...l.customers].some((n) => !!n && (n.toLowerCase() === t || n.toLowerCase().includes(t)));
   }
   return false;
 }

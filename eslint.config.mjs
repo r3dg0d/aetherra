@@ -12,7 +12,20 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "public/**",
+    "data-src/**",
+    "drizzle/**",
+    "screenshots/**",
   ]),
+  {
+    // React Compiler advisory rules: kept visible as warnings; the canvas/three render loops intentionally use refs and effects.
+    rules: {
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/refs": "warn",
+      "react-hooks/immutability": "warn",
+      "react-hooks/purity": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

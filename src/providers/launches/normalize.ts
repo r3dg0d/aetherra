@@ -52,8 +52,10 @@ export function splitOperatorAndCustomers(l: Ll2Launch) {
   const op = l.launch_service_provider;
   const opNames = new Set([op?.name, op?.abbrev].filter(Boolean).map((s) => s!.toLowerCase()));
   const customers = (l.mission?.agencies ?? [])
-    .map((a) => a.name ?? a.abbrev ?? "")
-    .filter((n) => n && !opNames.has(n.toLowerCase()));
+    .filter((a) => !opNames.has((a.name ?? "").toLowerCase()) && !opNames.has((a.abbrev ?? "").toLowerCase()))
+    // Prefer the short abbreviation (e.g. "NASA", "ESA") when the agency has one.
+    .map((a) => (a.abbrev && a.abbrev.length <= 12 ? a.abbrev : (a.name ?? a.abbrev ?? "")))
+    .filter(Boolean);
   return { operatorName: op?.name ?? null, operatorAbbrev: op?.abbrev ?? null, operatorType: typeof op?.type === "string" ? op.type : (op?.type?.name ?? null), customers: [...new Set(customers)] };
 }
 
