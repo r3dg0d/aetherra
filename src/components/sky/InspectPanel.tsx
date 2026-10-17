@@ -4,6 +4,7 @@ import { bodyState, riseSet, applyHor, eqjToHorMatrix, constellationAt, type Obs
 import { bvToTemperatureK, starLabel } from "@/lib/astro/catalog";
 import { formatRa, formatDec } from "@/lib/astro/coords";
 import type { SkySelection } from "./SkyCanvas";
+import { bodyToTarget } from "@/providers/planetary-imagery/targets";
 
 const Row = ({ k, v, hint }: { k: string; v: React.ReactNode; hint?: string }) => (
   <div className="flex justify-between gap-3 border-b hairline py-1 text-[12px]" title={hint}><span className="text-starlight/50">{k}</span><span className="mono text-right">{v}</span></div>
@@ -21,7 +22,7 @@ function starRiseSet(ra: number, dec: number, date: Date, obs: ObserverLoc) {
 }
 
 /** Inspection panel. Only properties present in the catalog or computed by the ephemeris are shown. */
-export function InspectPanel({ sel, date, obs, onClose }: { sel: SkySelection; date: Date; obs: ObserverLoc; onClose: () => void }) {
+export function InspectPanel({ sel, date, obs, onClose, onImagery }: { sel: SkySelection; date: Date; obs: ObserverLoc; onClose: () => void; onImagery?: (target: string) => void }) {
   if (!sel) return null;
   let title = "", sub = "", rows: React.ReactNode = null, source = "";
   if (sel.kind === "star") {
@@ -82,6 +83,11 @@ export function InspectPanel({ sel, date, obs, onClose }: { sel: SkySelection; d
         <button onClick={onClose} aria-label="Close details" className="text-starlight/50 hover:text-starlight">✕</button>
       </div>
       <div className="mt-3">{rows}</div>
+      {sel.kind === "body" && onImagery && bodyToTarget(sel.name) && (
+        <button className="btn btn-primary mt-3 w-full" onClick={() => onImagery(bodyToTarget(sel.name)!)} data-testid="open-imagery">
+          Surface & Mission Imagery{sel.name === "Mars" ? " · rover photos" : ""}
+        </button>
+      )}
       <p className="mt-2 text-[10px] text-starlight/40">Source: {source}. Times shown in your browser time zone.</p>
     </aside>
   );

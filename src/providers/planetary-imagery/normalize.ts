@@ -26,6 +26,7 @@ const utc = (s: string | null | undefined) => {
 const RAW_NOTE = "Raw, uncalibrated image as downlinked (no colour/radiometric correction).";
 
 export function normalizeM20(r: M20Raw): ImageryItem | null {
+  if (r.sample_type?.toLowerCase() === "thumbnail") return null;
   const f = r.image_files ?? {};
   const thumb = allowedImageUrl(f.small ?? f.medium);
   const large = allowedImageUrl(f.large ?? f.medium ?? f.small);

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loadConstellations, loadStars, starLabel, type Constellation, type StarRow } from "@/lib/astro/catalog";
 import { BODIES } from "@/lib/astro/sky";
+import { TARGETS, targetById } from "@/providers/planetary-imagery/targets";
 
 interface Result { type: string; label: string; sub?: string; href: string }
 
@@ -48,15 +49,39 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
     const s = q.trim().toLowerCase();
     if (!s) return PAGES;
     const out: Result[] = [];
+    // Imagery galleries: every typed word must appear in the target/mission description ("mars rover photos", "jupiter juno").
+    const words = s.split(/\s+/).filter((w) => w.length >= 2);
+    const imagery: Result[] = [];
+    for (const t of TARGETS) {
+      const parent = t.parent ? targetById(t.parent)?.label ?? "" : "";
+      const base = `${t.label} ${parent} imagery images image photos pictures gallery surface mission`.toLowerCase();
+      if (t.rover) {
+        const hay = `${base} rover rovers raw perseverance curiosity navcam mastcam hazcam sol`;
+        if (words.every((w) => hay.includes(w))) imagery.push({ type: "imagery", label: `${t.label} rover photos (raw)`, sub: "Perseverance & Curiosity · NASA/JPL", href: `/sky?gallery=${t.id}&source=rover` });
+      }
+      for (const q of t.queries) {
+        const hay = `${base} ${q.label} ${q.q}`.toLowerCase();
+        if (words.every((w) => hay.includes(w))) imagery.push({ type: "imagery", label: `${t.label}: ${q.label} imagery`, sub: "NASA Image and Video Library", href: `/sky?gallery=${t.id}${t.rover ? "&source=archive" : ""}&q=${q.id}` });
+      }
+    }
+    // A bare body name ("jupiter") shows the body first and its gallery second; specific queries show galleries first.
+    const specific = words.length > 1 || /photo|image|imagery|rover|picture|gallery/.test(s);
+    if (specific) out.push(...imagery.slice(0, 5));
     for (const b of BODIES) if (b.toLowerCase().includes(s)) out.push({ type: "planet", label: b, sub: "Solar System body", href: `/sky?body=${b}` });
     for (const c of cons) if (c.name.toLowerCase().includes(s) || c.id.toLowerCase() === s) out.push({ type: "constellation", label: c.name, sub: `Constellation · ${c.id}`, href: `/sky?con=${c.id}` });
     for (const st of stars) { const l = starLabel(st); if (l.toLowerCase().includes(s) || `hip ${st[0]}` === s) out.push({ type: "star", label: l, sub: `HIP ${st[0]} · mag ${st[3].toFixed(2)}`, href: `/sky?hip=${st[0]}` }); if (out.length > 30) break; }
+    if (!specific) out.push(...imagery.slice(0, 2));
     for (const p of PAGES) if (p.label.toLowerCase().includes(s)) out.push(p);
     return out.slice(0, 14);
   }, [q, stars, cons]);
 
   const results = q.trim().length < 2 ? local : [...local, ...remote];
-  const go = (r: Result) => { onClose(); setQ(""); router.push(r.href); };
+  const go = (r: Result) => {
+    onClose(); setQ("");
+    const sameSky = r.href.startsWith("/sky?") && window.location.pathname === "/sky";
+    if (sameSky) { window.history.pushState(null, "", r.href); window.dispatchEvent(new Event("aetherra:sky-params")); }
+    else router.push(r.href);
+  };
 
   if (!open) return null;
   return (

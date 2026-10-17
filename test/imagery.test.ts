@@ -122,3 +122,13 @@ describe("planetary imagery failure, backoff and quota", () => {
     expect((await GET(new Request("http://x/api/imagery?target=moon&source=rover"))).status).toBe(400);
   });
 });
+
+describe("image host allowlist stays in sync", () => {
+  it("next.config IMAGERY_HOSTS matches IMAGE_HOSTS", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { IMAGE_HOSTS } = await import("@/providers/planetary-imagery/types");
+    const cfg = readFileSync("next.config.ts", "utf8");
+    const m = cfg.match(/IMAGERY_HOSTS = (\[[^\]]+\])/);
+    expect(JSON.parse(m![1])).toEqual([...IMAGE_HOSTS]);
+  });
+});
