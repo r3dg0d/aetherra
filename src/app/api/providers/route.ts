@@ -8,6 +8,8 @@ import "@/providers/launches/ll2.adapter";
 import "@/providers/launches/nasa.adapter";
 import "@/providers/launches/spacex.adapter";
 import "@/providers/nominatim/adapter";
+import "@/providers/planetary-imagery/mars-raw.adapter";
+import "@/providers/planetary-imagery/nasa-ivl.adapter";
 import { feedStatus } from "@/providers/launches/service";
 import { vapidConfigured } from "@/providers/launches/push";
 import { swimStatus } from "@/providers/faa/swim.adapter";
