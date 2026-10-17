@@ -46,3 +46,22 @@ describe("ASCENT physics", () => {
     expect(Math.hypot(...s.r) - R_EARTH).toBeGreaterThan(10);
   });
 });
+
+import { autopilot } from "@/lib/ascent/physics";
+describe("ASCENT end-to-end", () => {
+  it("assisted ascent of AETHER-1 reaches orbit (periapsis > 140 km)", () => {
+    let s = { ...initialState(28.5, -80.6), engineOn: true, throttle: 1, headingDeg: 90 };
+    let inserted = false;
+    for (let i = 0; i < 1500 * 50 && !inserted; i++) {
+      if (i % 5 === 0) s = autopilot(s);
+      s = step(s, 0.02);
+      if (s.landedOrCrashed === "crashed") break;
+      inserted = isOrbitInserted(s.r, s.v) ;
+    }
+    const el = orbitalElements(s.r, s.v);
+    expect(s.landedOrCrashed).not.toBe("crashed");
+    expect(inserted).toBe(true);
+    expect(el.periapsisAlt).toBeGreaterThan(140_000);
+    expect(el.inclinationDeg).toBeGreaterThan(28); // can't go below launch latitude
+  });
+});

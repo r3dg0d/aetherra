@@ -162,3 +162,30 @@ export function advance(s: SimState, accumulator: number, elapsed: number, warp:
   while (acc >= h && n < 4000) { st = step(st, h, veh); acc -= h; n++; }
   return { state: st, accumulator: acc, effWarp };
 }
+
+/**
+ * Optional ascent assist (pitch program + circularisation). Pure function of state; used by the HUD
+ * "Assist" toggle and by tests to prove orbit is reachable with this vehicle.
+ */
+export function autopilot(s: SimState, veh: Vehicle = AETHER_1, targetApo = 220_000): SimState {
+  const h = altitude(s.r);
+  const el = orbitalElements(s.r, s.v);
+  let { pitchDeg, throttle, engineOn, stage } = s;
+  const vr = vec.dot(s.v, vec.unit(s.r));
+  if (s.landedOrCrashed === "crashed") return s;
+  // Stage when current stage is dry
+  if (s.prop[stage] <= 0 && stage < veh.stages.length - 1) { stage++; engineOn = true; }
+  if (el.periapsisAlt > ORBIT_PERIAPSIS_MIN + 20_000) { throttle = 0; engineOn = false; }
+  else if (h < 1_000) { pitchDeg = 90; throttle = 1; engineOn = s.prop[stage] > 0; }
+  else if (stage === 0) {
+    // Gravity turn on the first stage.
+    pitchDeg = 90 - 78 * Math.pow(Math.min(1, (h - 1_000) / 90_000), 0.6);
+    throttle = 1; engineOn = s.prop[stage] > 0;
+  } else {
+    // Upper stage: steer vertical speed toward the target altitude while building orbital speed.
+    const vrWanted = (targetApo - h) / 60;
+    pitchDeg = Math.max(-15, Math.min(40, (vrWanted - vr) * 0.08 + 3));
+    throttle = 1; engineOn = s.prop[stage] > 0;
+  }
+  return { ...s, pitchDeg, throttle, engineOn, stage };
+}
