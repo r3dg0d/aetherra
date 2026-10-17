@@ -49,6 +49,16 @@ The e2e suite checks navigation, search, layer toggles, mute persistence, hide-U
 - **Sound:** every sound is synthesized live with the Web Audio API, so the app ships no audio files. It's muted by default. Nothing plays until you unmute, and the audio context only starts after a user gesture. Mute and volume persist. Sounds include UI ticks, an ambient drone per mode, an ASCENT engine rumble that follows throttle and dynamic pressure, countdown beeps and a staging thunk. Reduced motion ("calm mode") turns off drones and softens ticks. **Sound is cinematic, not a model of acoustics in space.**
 - **Mobile:** below 1024 px the nav collapses into a menu. Below 768 px the side panels become bottom sheets. Safe-area insets are respected, and touch targets are 44 px on coarse pointers. The globe and sky take drag and pinch. ASCENT adds an on-screen attitude pad, a throttle slider and LAUNCH/STAGE, assist, warp, camera and map buttons.
 
+## Planetary imagery (SKY)
+
+Select the Moon or a planet in SKY and press **Surface & Mission Imagery**. You can also search "Mars rover photos" or "Jupiter Juno", or open `/sky?gallery=mars`.
+
+- **Mars:** Perseverance and Curiosity raw images straight from NASA/JPL's feeds (DELAYED, labelled raw/uncalibrated). Filter by rover, camera and sol; the latest sol is the default.
+- **Moon, planets and moons:** curated mission queries against the NASA Image and Video Library (HISTORICAL). Illustrations are flagged and hidden by default.
+- **Lightbox:** mission, instrument, UTC date, sol, image ID, source, credit, rights note and an official link. Use ←/→, swipe and Esc to navigate.
+
+`npm run screenshots:imagery` captures the gallery shots. Source details are in [docs/providers.md](docs/providers.md#planetary-imagery-notes).
+
 ## Keyboard
 
 - **Global:**

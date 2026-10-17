@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { collectErrors } from "./helpers";
+import { collectErrors, horizontalOverflow, smallTargets } from "./helpers";
 
 async function openFromInspect(page: Page, body: string) {
   await page.goto(`/sky?body=${body}`);
@@ -82,4 +82,13 @@ test("search 'Mars rover photos' opens the rover tab", async ({ page }) => {
   await page.getByRole("option").filter({ hasText: /Mars rover photos/ }).first().click();
   await expect(page.getByTestId("imagery-gallery")).toBeVisible();
   await expect(page.getByTestId("imagery-source-rover")).toHaveAttribute("aria-selected", "true");
+});
+
+test("gallery layout: no horizontal overflow and 44px targets on touch", async ({ page }, info) => {
+  await page.goto("/sky?gallery=jupiter&q=junocam");
+  const g = page.getByTestId("imagery-gallery");
+  await expect(g.getByTestId("imagery-thumb").first().or(g.getByTestId("imagery-unavailable"))).toBeVisible({ timeout: 45_000 });
+  await expect(g.getByTestId("imagery-close")).toBeInViewport();
+  expect((await horizontalOverflow(page)).canScroll).toBe(false);
+  if (info.project.use.hasTouch) expect(await smallTargets(page)).toEqual([]);
 });

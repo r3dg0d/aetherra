@@ -19,6 +19,11 @@ This is an honest list of what is partial, stubbed or missing in this build.
 - **Ascent reconstructions** on launch pages are generic SIMULATED gravity-turn profiles, not telemetry.
 - **ASCENT** uses a point-mass vehicle with no attitude dynamics, aerodynamic torques, heating or landing. Pitch and heading are commanded directly. Earth rotation is modelled in drag and launch velocity; J2 isn't modelled.
 - **Push notifications** need VAPID keys and a browser with Push API support. iOS needs the PWA installed to the home screen. The scheduler is in-process, so on serverless hosting use an external cron hitting `POST /api/launches/refresh`. The queue is processed on the 60 s tick.
+- **Planetary imagery**:
+  - Rover listings show the first 48 images of a sol. Raw images are uncalibrated, and night or calibration frames can look like noise.
+  - Library search relevance depends on NASA's metadata. Curated queries can still return spacecraft-processing photos.
+  - Library dates are record dates, not always acquisition dates.
+  - No LROC catalogue, direct JunoCam feed or Chang'e data.
 - **Sky**: no atmospheric refraction, light pollution or deep-sky objects. Stars go to magnitude 6 only.
 - **Mobile**: Playwright-audited at 390x844, 412x915 and 820x1180, with touch controls, bottom sheets and 44 px targets. Auto quality starts phones on Low. The audit couldn't run on real devices (no device farm here), so real-GPU frame rates are unmeasured.
 - **Cloud layer**: a static NASA Blue Marble composite. It isn't live or current weather. Use the GIBS layers in EARTH for daily imagery.

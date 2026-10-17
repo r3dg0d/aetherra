@@ -81,16 +81,17 @@ export function ImageryGallery({ init, onClose }: { init: GalleryInit; onClose: 
         role="dialog" aria-modal="true" aria-label={`Surface & Mission Imagery: ${target.label}`} data-testid="imagery-gallery"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <header className="flex flex-wrap items-center gap-2 border-b hairline px-4 py-3">
-          <div className="mx-auto h-1 w-10 rounded-full bg-starlight/20 md:hidden" aria-hidden />
-          <div className="flex w-full items-center gap-2">
-            <h2 className="text-[15px] font-medium">Surface & Mission Imagery</h2>
-            <select className="input ml-1 py-1 text-[13px]" value={targetId} onChange={(e) => pickTarget(e.target.value)} aria-label="Planet or moon" data-testid="imagery-target">
+        <header className="border-b hairline px-4 pb-2 pt-2 md:py-3">
+          <div className="mx-auto mb-1 h-1 w-10 rounded-full bg-starlight/20 md:hidden" aria-hidden />
+          <div className="flex items-center gap-2">
+            <h2 className="shrink-0 text-[14px] font-medium md:text-[15px]"><span className="md:hidden">Imagery</span><span className="hidden md:inline">Surface & Mission Imagery</span></h2>
+            <select className="input min-w-0 flex-1 py-1 text-[13px] md:max-w-[220px] md:flex-none" value={targetId} onChange={(e) => pickTarget(e.target.value)} aria-label="Planet or moon" data-testid="imagery-target">
               {TARGETS.map((t) => <option key={t.id} value={t.id}>{t.parent ? `  ${t.label} (${targetById(t.parent)?.label} moon)` : t.label}</option>)}
             </select>
-            {env && <DataBadge value={env.dataClass} note={env.notice} />}
-            <button ref={closeRef} className="icon-btn ml-auto" onClick={onClose} aria-label="Close imagery gallery" data-testid="imagery-close">✕</button>
+            <span className="hidden sm:inline-flex">{env && <DataBadge value={env.dataClass} note={env.notice} />}</span>
+            <button ref={closeRef} className="icon-btn ml-auto shrink-0" onClick={onClose} aria-label="Close imagery gallery" data-testid="imagery-close">✕</button>
           </div>
+          {env && <div className="mt-1 sm:hidden"><DataBadge value={env.dataClass} note={env.notice} size="xs" /></div>}
         </header>
 
         <div className="flex flex-wrap items-center gap-2 border-b hairline px-4 py-2 text-[12px]">

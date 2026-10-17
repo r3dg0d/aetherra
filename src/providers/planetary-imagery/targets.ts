@@ -5,9 +5,10 @@ export interface ImageryTarget { id: string; label: string; parent?: string; rov
 export const TARGETS: ImageryTarget[] = [
   { id: "moon", label: "Moon", queries: [
     { id: "apollo", label: "Apollo", q: "Apollo lunar surface" },
-    { id: "lro", label: "LRO", q: "Lunar Reconnaissance Orbiter LROC" },
-    { id: "artemis", label: "Artemis", q: "Artemis Orion Moon" },
-    { id: "earthrise", label: "Earthrise & far side", q: "lunar far side" },
+    { id: "lroc-nac", label: "LROC close-ups", q: "LROC NAC" },
+    { id: "lro", label: "LRO", q: "Lunar Reconnaissance Orbiter crater" },
+    { id: "artemis", label: "Artemis", q: "Artemis I Orion Moon" },
+    { id: "farside", label: "Far side", q: "lunar far side" },
   ] },
   { id: "mercury", label: "Mercury", queries: [
     { id: "messenger", label: "MESSENGER", q: "MESSENGER Mercury" },
@@ -15,11 +16,11 @@ export const TARGETS: ImageryTarget[] = [
   ] },
   { id: "venus", label: "Venus", queries: [
     { id: "magellan", label: "Magellan radar", q: "Magellan Venus" },
-    { id: "parker", label: "Parker Solar Probe", q: "Parker Solar Probe Venus" },
-    { id: "mariner", label: "Mariner / Galileo", q: "Venus Mariner 10 Galileo" },
+    { id: "galileo", label: "Galileo flyby", q: "Venus Galileo" },
+    { id: "pioneer", label: "Pioneer Venus", q: "Pioneer Venus" },
   ] },
   { id: "mars", label: "Mars", rover: true, queries: [
-    { id: "hirise", label: "HiRISE (MRO)", q: "HiRISE Mars" },
+    { id: "hirise", label: "HiRISE (MRO)", q: "HiRISE" },
     { id: "perseverance", label: "Perseverance (released)", q: "Perseverance rover Jezero" },
     { id: "curiosity", label: "Curiosity (released)", q: "Curiosity rover Gale crater" },
     { id: "viking", label: "Viking", q: "Viking Mars surface" },
@@ -29,7 +30,7 @@ export const TARGETS: ImageryTarget[] = [
     { id: "galileo", label: "Galileo", q: "Galileo Jupiter atmosphere" },
     { id: "voyager", label: "Voyager", q: "Voyager Jupiter" },
   ] },
-  { id: "io", label: "Io", parent: "jupiter", queries: [{ id: "io", label: "Io", q: "Io volcano Jupiter moon" }] },
+  { id: "io", label: "Io", parent: "jupiter", queries: [{ id: "io", label: "Galileo / Voyager", q: "Io" }] },
   { id: "europa", label: "Europa", parent: "jupiter", queries: [{ id: "europa-galileo", label: "Galileo", q: "Europa Galileo" }, { id: "europa-juno", label: "Juno", q: "Europa Juno" }] },
   { id: "ganymede", label: "Ganymede", parent: "jupiter", queries: [{ id: "ganymede", label: "Ganymede", q: "Ganymede" }] },
   { id: "callisto", label: "Callisto", parent: "jupiter", queries: [{ id: "callisto", label: "Callisto", q: "Callisto Galileo" }] },

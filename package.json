@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "screenshots": "node scripts/screenshots.mjs",
     "e2e": "playwright test",
-    "screenshots:polish": "node scripts/screenshots-polish.mjs"
+    "screenshots:polish": "node scripts/screenshots-polish.mjs",
+    "screenshots:imagery": "node scripts/screenshots-imagery.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.10",

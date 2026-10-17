@@ -29,7 +29,18 @@ Errors use `{ error: string }` with 400/403/404/502. Responses never contain sec
 | `GET /api/streetlights` | `s,w,n,e` (≤0.05 sq°) | `data: {id,lat,lon,tags}[]` (HISTORICAL OSM street lamps; not lighting state) |
 | `GET /api/search` | `q`, `places=0` to skip geocoding | `data: {type,label,sub,href}[]` across launches, sites, satellites and places (Nominatim) |
 
+## `GET /api/imagery`
+
+Envelope `{ provider, attribution, dataClass, fetchedAt, ageSeconds, stale, notice?, data: { items: ImageryItem[], total, sol?, latestSol?, query? } }`.
+
+- `?target=mars&source=rover&rover=perseverance|curiosity[&camera=<id>][&sol=<n>|latest]` returns raw rover images (DELAYED). Without `sol`, it lists the latest sol that has images, and `data.latestSol` is set.
+- `?target=<moon|mercury|venus|mars|jupiter|io|europa|ganymede|callisto|saturn|titan|enceladus|uranus|neptune|pluto>&source=archive[&q=<query id>][&page=1..20]` returns NASA Image and Video Library results (HISTORICAL).
+- `ImageryItem` fields: `id, source, target, title, mission, instrument, date (UTC ISO), dateKind (acquired|created), sol, thumb, large, full, pageUrl, credit, description, kind (raw|photo|illustration|processed), rightsNote, dataClass`.
+- Errors: `400` for parameters outside the allowlist. `502`/`503` with `dataClass: "UNAVAILABLE"` and an empty list when upstream fails, with `Retry-After` when backing off.
+
 ## Deep links
+
+- `/sky?gallery=<target>[&source=rover|archive][&rover=curiosity][&q=<query id>]` opens the Surface & Mission Imagery gallery. `/sky?body=Mars&gallery=1` also works.
 
 - `/earth?lat=&lon=&alt=&label=`: fly to a point. `/earth?pad=<launchId>` flies to the pad. `&recon=1` adds the SIMULATED ascent reconstruction.
 - `/launches/<id>`: mission detail.

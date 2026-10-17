@@ -9,6 +9,8 @@
 | [NASA GIBS / Worldview](https://www.earthdata.nasa.gov/gibs) | Daily satellite imagery | NASA data, no copyright restrictions; "Imagery: NASA EOSDIS GIBS" |
 | NASA Visible Earth / Black Marble | Earth day and night textures | Public domain (NASA) |
 | NASA Visible Earth, Blue Marble cloud composite (`cloud_combined_2048.jpg`) | Cloud layer (`public/textures/earth_clouds_{1k,2k}.jpg`, downscaled grayscale) | Public domain (NASA). A static, illustrative composite, not live weather |
+| [NASA/JPL-Caltech raw images](https://mars.nasa.gov/mars2020/multimedia/raw-images/) (Perseverance, Curiosity) | SKY imagery gallery (raw, uncalibrated) | NASA media guidelines. Credit "NASA/JPL-Caltech" plus instrument partners as given per image (e.g. LANL/CNES for ChemCam, MSSS) |
+| [NASA Image and Video Library](https://images.nasa.gov) | SKY imagery gallery (Moon, planets, moons) | Generally not copyrighted. Per-item credit (photographer, secondary creator or description credit). Some items are third-party processed under CC BY and are flagged in the UI |
 | [d3-celestial](https://github.com/ofrohn/d3-celestial) (Olaf Frohn) | Star catalogue (Hipparcos subset to mag 6), constellation lines/names | BSD-3-Clause (see `data-src/d3-celestial/LICENSE`) |
 | [astronomy-engine](https://github.com/cosinekitty/astronomy) | Sun/Moon/planet ephemerides, rise/set | MIT |
 | [satellite.js](https://github.com/shashwatak/satellite-js) | SGP4/SDP4 | MIT |
