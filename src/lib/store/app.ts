@@ -39,6 +39,13 @@ interface AppState {
   setAmbient: (v: boolean) => void;
   uiSounds: boolean;
   setUiSounds: (v: boolean) => void;
+  /** AETHERRA Voice (simulated assistant): spoken replies + speech rate/pitch. */
+  voiceReplies: boolean;
+  setVoiceReplies: (v: boolean) => void;
+  voiceRate: number;
+  setVoiceRate: (v: number) => void;
+  voicePitch: number;
+  setVoicePitch: (v: number) => void;
   /** Static NASA Blue Marble cloud composite (illustrative, not live weather). */
   showClouds: boolean;
   setShowClouds: (v: boolean) => void;
@@ -63,6 +70,12 @@ export const useApp = create<AppState>()(persist((set, get) => ({
   setUiSounds: (uiSounds) => set({ uiSounds }),
   showClouds: true,
   setShowClouds: (showClouds) => set({ showClouds }),
+  voiceReplies: true,
+  setVoiceReplies: (voiceReplies) => set({ voiceReplies }),
+  voiceRate: 1,
+  setVoiceRate: (voiceRate) => set({ voiceRate: Math.max(0.6, Math.min(1.5, voiceRate)) }),
+  voicePitch: 1,
+  setVoicePitch: (voicePitch) => set({ voicePitch: Math.max(0.5, Math.min(1.6, voicePitch)) }),
   clientId: null,
   ensureClientId: () => {
     const c = get().clientId;
@@ -72,10 +85,10 @@ export const useApp = create<AppState>()(persist((set, get) => ({
     return id;
   },
 }), {
-  name: "aetherra-app", version: 2, skipHydration: true,
+  name: "aetherra-app", version: 3, skipHydration: true,
   migrate: (persisted, version) => {
     const p = (persisted ?? {}) as Partial<AppState>;
-    if (version < 2) return { ...p, quality: "auto", muted: true, volume: 0.6, ambient: true, uiSounds: true, showClouds: true } as AppState;
+    if (version < 3) return { ...p, quality: (p.quality as Quality) ?? "auto", muted: p.muted ?? true, volume: p.volume ?? 0.6, ambient: p.ambient ?? true, uiSounds: p.uiSounds ?? true, showClouds: p.showClouds ?? true, voiceReplies: true, voiceRate: 1, voicePitch: 1 } as AppState;
     return p as AppState;
   },
 }));
