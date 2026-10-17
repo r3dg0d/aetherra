@@ -42,7 +42,7 @@ export function StatusClient() {
           {d?.providers.map((p) => (
             <article key={p.id} className="glass p-4 text-sm">
               <div className="flex flex-wrap items-center gap-2"><h3 className="font-medium">{p.name}</h3><DataBadge value={(p.status as { state?: string } | undefined)?.state === "unconfigured" && p.requiresCredentials ? "UNAVAILABLE" : p.dataClass} size="xs" /><span className="text-starlight/50">{p.operator}</span>
-                <a className="ml-auto text-celestial" href={p.homepage} target="_blank" rel="noreferrer">Homepage ↗</a></div>
+                <a className="tap-link ml-auto text-celestial" href={p.homepage} target="_blank" rel="noreferrer">Homepage ↗</a></div>
               <p className="mt-1 text-starlight/70">{p.attribution}</p>
               <p className="mt-1 text-[12px] text-starlight/50">Licence: {p.license}{p.termsUrl && <> · <a className="text-celestial" href={p.termsUrl} target="_blank" rel="noreferrer">terms</a></>}{p.rateLimit && <> · Rate limit: {p.rateLimit}</>} · Expected refresh {p.expectedRefreshSeconds}s</p>
               {p.envVars.length > 0 && <p className="mono mt-1 text-[11px] text-starlight/50">{p.envVars.map((e) => `${e.name}: ${e.set ? "set" : "not set"}`).join(" · ")}</p>}
@@ -52,7 +52,7 @@ export function StatusClient() {
         </section>
         {d?.launches != null && <section className="glass p-4"><h2 className="label mb-2">Launch feed snapshots</h2><pre className="mono scroll-thin max-h-64 overflow-auto text-[11px] text-starlight/60">{JSON.stringify(d.launches, null, 1)}</pre></section>}
         <section className="space-y-2"><h2 className="label">Client-side &amp; bundled sources</h2>
-          {STATIC.map((s) => <article key={s.name} className="glass p-3 text-sm"><a className="font-medium text-celestial" href={s.href} target="_blank" rel="noreferrer">{s.name} ↗</a><p className="text-starlight/60">{s.note}</p></article>)}
+          {STATIC.map((s) => <article key={s.name} className="glass p-3 text-sm"><a className="tap-link font-medium text-celestial" href={s.href} target="_blank" rel="noreferrer">{s.name} ↗</a><p className="text-starlight/60">{s.note}</p></article>)}
         </section>
       </div>
     </div>

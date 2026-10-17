@@ -20,6 +20,11 @@ html, body { background: #030409; color: #F4F7FF; height: 100%; }
 body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; overflow: hidden; }
 
 @layer components {
+  @media (pointer: coarse) {
+    .tap-link { display: inline-flex; align-items: center; min-height: 44px; }
+    input[type="range"] { min-height: 44px; }
+  }
+
 /* Translucent glass panel: layered gradient, hairline border with a faint top highlight. */
 .glass {
   background:

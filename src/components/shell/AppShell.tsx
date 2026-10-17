@@ -38,7 +38,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
   return (
     <>
-      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-midnight focus:px-3 focus:py-1">Skip to content</a>
+      <a href="#main" data-tap-exempt className="sr-only focus:min-h-[44px] focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-midnight focus:px-3 focus:py-1">Skip to content</a>
       <Nav onSearch={() => setSearch(true)} onSettings={() => setSettings((s) => !s)} />
       <main id="main" className="fixed inset-0">{children}</main>
       <StatusBar />

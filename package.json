@@ -12,7 +12,9 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "typecheck": "tsc --noEmit",
-    "screenshots": "node scripts/screenshots.mjs"
+    "screenshots": "node scripts/screenshots.mjs",
+    "e2e": "playwright test",
+    "screenshots:polish": "node scripts/screenshots-polish.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.10",

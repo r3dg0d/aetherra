@@ -37,6 +37,8 @@ class AudioEngine {
       this.sfx.connect(this.master); this.amb.connect(this.master); this.eng.connect(this.master);
       this.master.connect(comp).connect(this.ctx.destination);
       this.noise = this.makeBrownNoise(3);
+      const expose = () => { (window as unknown as { __aetherraAudioState?: string }).__aetherraAudioState = this.ctx?.state; };
+      this.ctx.addEventListener("statechange", expose); expose();
       this.applyLevels();
       if (this.scene) this.startDrone(this.scene);
     }

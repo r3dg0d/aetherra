@@ -50,7 +50,7 @@ export function Nav({ onSearch, onSettings }: { onSearch: () => void; onSettings
         <button className="icon-btn lg:hidden" aria-label={menu ? "Close menu" : "Open menu"} aria-expanded={menu} aria-controls="mobile-menu" onClick={() => setMenu((m) => !m)} data-testid="menu-toggle">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>{menu ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}</svg>
         </button>
-        <Link href="/" className="logo-link mr-1 truncate px-1 text-[13px] font-semibold tracking-[0.42em] text-starlight md:px-2" aria-label="AETHERRA home">AETHERRA</Link>
+        <Link href="/" className="logo-link tap-link mr-1 truncate px-1 text-[13px] font-semibold tracking-[0.42em] text-starlight md:px-2" aria-label="AETHERRA home">AETHERRA</Link>
         <span className="mx-1 hidden h-4 w-px bg-violet/25 lg:block" />
         <ul className="hidden items-center lg:flex">
           {LINKS.map((l) => {
