@@ -20,6 +20,10 @@ This is an honest list of what is partial, stubbed or missing in this build.
 - **ASCENT** uses a point-mass vehicle with no attitude dynamics, aerodynamic torques, heating or landing. Pitch and heading are commanded directly. Earth rotation is modelled in drag and launch velocity; J2 isn't modelled.
 - **Push notifications** need VAPID keys and a browser with Push API support. iOS needs the PWA installed to the home screen. The scheduler is in-process, so on serverless hosting use an external cron hitting `POST /api/launches/refresh`. The queue is processed on the 60 s tick.
 - **Sky**: no atmospheric refraction, light pollution or deep-sky objects. Stars go to magnitude 6 only.
-- **Mobile**: layouts are responsive, but the 3D views are tuned for desktop GPUs. Use the Low quality preset on phones.
+- **Mobile**: Playwright-audited at 390x844, 412x915 and 820x1180, with touch controls, bottom sheets and 44 px targets. Auto quality starts phones on Low. The audit couldn't run on real devices (no device farm here), so real-GPU frame rates are unmeasured.
+- **Cloud layer**: a static NASA Blue Marble composite. It isn't live or current weather. Use the GIBS layers in EARTH for daily imagery.
+- **Milky Way**: procedural and artistic. Its position is real (galactic plane and centre), but structure and brightness are stylised.
+- **Sound**: cinematic and synthesized. Space is silent, and the rumble isn't a physical acoustic model.
+- **Frame-rate numbers** from the e2e audit come from headless Chrome on SwiftShader (CPU rendering), so the WebGL pages report 2–30 FPS there. They're a regression signal, not a real-GPU benchmark. DOM pages hit 60 FPS.
 - **Accessibility**: keyboard navigation, aria labels and reduced motion are supported. The 3D canvases have text alternatives in their side panels, but full screen-reader parity isn't there yet.
-- **E2E tests**: Playwright is used for screenshots only, not assertions. Unit and integration coverage is in Vitest.
+- **E2E tests**: Playwright assertions cover navigation, search, layer toggles, mute, hide-UI, touch controls, the per-viewport layout audit and in-browser ASCENT orbit insertion. Data pages depend on live providers, so content assertions stay loose.

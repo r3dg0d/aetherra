@@ -45,3 +45,11 @@ public/sw.js (push / notificationclick)       server/db (Drizzle: Postgres or PG
 3. `normalize` produces `NormalizedLaunch`. `ingestLaunches` upserts it in one transaction. `changeDetector` compares with the stored row and emits NEW, NET_CHANGED, SCRUBBED, STATUS_CHANGED, LAUNCHED or WINDOW_CHANGED with deterministic dedupe keys. Out-of-order snapshots are ignored.
 4. `queue.enqueueChanges` and `enqueueReminders` write `delivery_events` (unique dedupe key). Reminders are only sent for Second/Minute precision and Go/TBC status, within a 15-minute grace window.
 5. `processQueue` writes the in-app inbox and sends Web Push. Subscriptions are deactivated on 404/410.
+
+## Rendering quality (`lib/quality.ts`)
+
+`useQuality()` resolves the user's preset (`low|medium|high|ultra|auto`) to a tier table: DPR range, texture size, clouds, bloom, AA, star magnitude, sphere segments, Milky Way and particles. `AdaptiveResolution` (drei `PerformanceMonitor`) moves DPR within the tier's range. In Auto it also steps tiers (capped at High). Bloom uses threshold 1.0, so only HDR sources glow: the Sun sprite, bright stars (per-star `boost`) and the ASCENT plume. Custom shaders include `colorspace_fragment`, and the ASCENT ones add the log-depth chunks.
+
+## Audio (`lib/audio/`)
+
+`engine.ts` is a singleton around one `AudioContext`, created on the first user gesture. Graph: master gain (mute × volume) → compressor → destination. Voices: UI tick (short sine blip), per-scene drones (detuned oscillators + filtered noise, `params.ts`), countdown beeps, staging thunk (noise burst + low sine), and an engine voice (brown noise + saw rumble + buffet LFO). `engineParams(throttle, q, density)` maps the engine voice to gain and cutoff. `useAudioSystem` syncs settings and delegates click ticks. `useAmbient(scene)` sets the drone per page.

@@ -30,18 +30,18 @@ void main() {
   float b = asin(clamp(g.z, -1.0, 1.0));
   float n = fbm(vDir * 6.0);
   float n2 = fbm(vDir * 22.0 + 3.1);
-  float bulge = exp(-(l * l) / 0.7) * exp(-(b * b) / 0.03);
+  float bulge = exp(-(l * l) / 0.25) * exp(-(b * b) / 0.02);
   float band = exp(-(b * b) / (0.022 + 0.02 * n)) * (0.45 + 0.55 * exp(-(l * l) / 2.6));
-  float wide = exp(-(b * b) / 0.25) * 0.18;
+  float wide = exp(-(b * b) / 0.12) * 0.08;
   float dust = 1.0 - 0.75 * exp(-(b - 0.01) * (b - 0.01) / 0.0012) * smoothstep(0.35, 0.75, n2) * exp(-(l * l) / 3.0);
-  float lum = (band * (0.55 + 0.9 * n) + bulge * 1.2 + wide * n) * dust;
+  float lum = (band * (0.55 + 0.9 * n) + bulge * 0.7 + wide * n) * dust;
   vec3 col = mix(vec3(0.62, 0.68, 0.95), vec3(1.0, 0.86, 0.7), clamp(bulge * 2.0, 0.0, 1.0));
   col += vec3(0.47, 0.34, 1.0) * 0.12 * n2 * band;
   gl_FragColor = vec4(col * lum * intensity, 1.0);
   #include <colorspace_fragment>
 }`;
 
-export function MilkyWay({ radius = 790, intensity = 0.16 }: { radius?: number; intensity?: number }) {
+export function MilkyWay({ radius = 790, intensity = 0.12 }: { radius?: number; intensity?: number }) {
   const uniforms = useMemo(() => ({ intensity: { value: intensity } }), [intensity]);
   return (
     <mesh frustumCulled={false} raycast={() => null} renderOrder={-10}>

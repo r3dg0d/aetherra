@@ -62,7 +62,7 @@ export default function OrbitScene({ data, selected, onPick, orbit, track, label
   const reduced = useReducedMotion();
   const selPos = selected != null && data ? ([data.pos[selected * 3], data.pos[selected * 3 + 1], data.pos[selected * 3 + 2]] as [number, number, number]) : null;
   return (
-    <Canvas camera={{ position: [0, 1.5, 4.2], fov: 45, near: 0.005, far: 3000 }} dpr={q.dpr} gl={{ antialias: q.antialias && !q.bloom }} aria-label="3D view of tracked satellites around Earth">
+    <Canvas camera={{ position: typeof window !== "undefined" && window.innerWidth / window.innerHeight < 0.8 ? [0, 2.6, 7.4] : [0, 1.5, 4.2], fov: 45, near: 0.005, far: 3000 }} dpr={q.dpr} gl={{ antialias: q.antialias && !q.bloom }} aria-label="3D view of tracked satellites around Earth">
       <color attach="background" args={["#030409"]} />
       <Suspense fallback={null}>
         <Starfield maxMag={Math.min(q.starMag, 5.8)} lines={false} milkyWay={q.milkyWay} />

@@ -35,6 +35,9 @@ export default function OrbitPage() {
   const [feeds, setFeeds] = useState<Record<string, Feed>>({});
   const [points, setPoints] = useState<SatPoints | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  // Only explicit user picks open the mobile sheet; the default ISS selection must not cover the globe.
+  const [pickCount, setPickCount] = useState(0);
+  const pick = useCallback((i: number) => { setSelected(i); setPickCount((n) => n + 1); }, []);
   const [query, setQuery] = useState("");
   const [flyTo, setFlyTo] = useState<[number, number, number] | null>(null);
   const worker = useRef<Worker | null>(null);
@@ -125,7 +128,7 @@ export default function OrbitPage() {
     useView.getState().setData(unavailable ? "UNAVAILABLE" : tc === "HISTORICAL" ? "HISTORICAL" : "PREDICTED", unavailable ? "CelesTrak unavailable" : `SGP4 propagation of CelesTrak GP elements${feedStale ? " (elements cache stale)" : ""}`);
   }, [now, mode, feedStale, unavailable]);
 
-  const onPick = useCallback((i: number) => setSelected(i), []);
+  const onPick = pick;
   const results = query.length > 1 ? catalog.map((c, i) => ({ c, i })).filter(({ c }) => c.omm.OBJECT_NAME.toLowerCase().includes(query.toLowerCase()) || String(c.omm.NORAD_CAT_ID) === query).slice(0, 8) : [];
   const age = rec ? tleAge(rec, new Date(now)) : null;
   const a = rec ? Math.cbrt(398600.4418 / (rec.no / 60) ** 2) : 0;
@@ -133,7 +136,7 @@ export default function OrbitPage() {
   return (
     <div className="relative h-full w-full">
       <div className="absolute inset-0"><OrbitScene data={points} selected={selected} onPick={onPick} orbit={orbit} track={track} label={sel ? sel.omm.OBJECT_NAME : null} observer={observer} flyTo={flyTo} /></div>
-      <Sheet title={sel ? sel.omm.OBJECT_NAME : "Satellites"} openSignal={selected != null ? selected + 1 : 0} testId="orbit-sheet">
+      <Sheet title={sel ? sel.omm.OBJECT_NAME : "Satellites"} openSignal={pickCount} testId="orbit-sheet">
       <div className="absolute left-4 top-20 flex w-[280px] flex-col gap-2">
         <div className="glass p-3">
           <div className="label mb-2">Satellite groups · CelesTrak</div>
@@ -147,8 +150,8 @@ export default function OrbitPage() {
         </div>
         <div className="glass p-3">
           <input className="input w-full" placeholder="Find satellite or NORAD ID" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Find satellite" />
-          <ul className="mt-1">{results.map(({ c, i }) => <li key={c.omm.NORAD_CAT_ID}><button className="w-full rounded px-2 py-1 text-left text-[12px] hover:bg-nebula/15" onClick={() => { setSelected(i); setQuery(""); }}>{c.omm.OBJECT_NAME} <span className="mono text-[10px] text-starlight/40">{c.omm.NORAD_CAT_ID}</span></button></li>)}</ul>
-          <div className="mt-2 flex flex-wrap gap-1">{[["ISS", 25544], ["Tiangong", 48274], ["Hubble", 20580]].map(([n, id]) => <button key={id} className="btn" onClick={() => { const i = catalog.findIndex((c) => c.omm.NORAD_CAT_ID === id); if (i >= 0) setSelected(i); else if (id === 20580) setActive((a) => a.includes("science") ? a : [...a, "science"]); }}>{n}</button>)}</div>
+          <ul className="mt-1">{results.map(({ c, i }) => <li key={c.omm.NORAD_CAT_ID}><button className="w-full rounded px-2 py-1 text-left text-[12px] hover:bg-nebula/15" onClick={() => { pick(i); setQuery(""); }}>{c.omm.OBJECT_NAME} <span className="mono text-[10px] text-starlight/40">{c.omm.NORAD_CAT_ID}</span></button></li>)}</ul>
+          <div className="mt-2 flex flex-wrap gap-1">{[["ISS", 25544], ["Tiangong", 48274], ["Hubble", 20580]].map(([n, id]) => <button key={id} className="btn" onClick={() => { const i = catalog.findIndex((c) => c.omm.NORAD_CAT_ID === id); if (i >= 0) pick(i); else if (id === 20580) setActive((a) => a.includes("science") ? a : [...a, "science"]); }}>{n}</button>)}</div>
         </div>
       </div>
       {sel && rec && (

@@ -31,15 +31,30 @@ Checks:
 ```bash
 npm run lint && npm test && npm run typecheck
 npm run screenshots    # needs a running server and Chrome at /usr/bin/google-chrome (CHROME_PATH to override)
+npm run e2e            # Playwright against BASE_URL (default http://localhost:3000): desktop 1280x800, iPhone 390x844, Android 412x915, iPad 820x1180
+npm run screenshots:polish   # desktop + mobile shots into screenshots/polish/
 ```
+
+The e2e suite checks navigation, search, layer toggles, mute persistence, hide-UI mode and touch controls. It also runs a per-page audit on every viewport: no horizontal scroll, no console errors, tap targets ≥ 44 px on touch, and rAF frame timing written to `test-results/audit/`. It flies ASCENT to orbit in the browser with assist and time warp.
 
 - **Database:** with `DATABASE_URL` the app uses Postgres via Drizzle. Without it, it falls back to embedded PGlite in `./.data/pglite`. Migrations in `drizzle/` run automatically.
 - **Push:** Web Push needs VAPID keys (`npx web-push generate-vapid-keys`). Without them, reminders still land in the in-app inbox.
 - **Scheduler:** an in-process scheduler (`src/instrumentation.ts`) refreshes launches within the LL2 rate budget, enqueues reminders and change alerts, and delivers them every 60 s. Disable it with `AETHERRA_SCHEDULER=off`.
 
+## Visuals, sound and mobile
+
+- **Quality presets:** Low, Medium, High, Ultra or Auto, in Settings. Each preset sets DPR range, texture size, clouds, bloom, star magnitude, sphere segments, Milky Way and particle counts. Auto picks a starting tier from the device and adjusts resolution with a frame-rate monitor. A dev perf panel (FPS, p50/p95 frame time, draw calls, triangles, DPR, heap) can be switched on in Settings.
+- **Intro:** a logo fade, then a cinematic orbit into the Earth. It plays once per session and can be skipped with any input or the "Skip intro" button. It's skipped entirely under reduced motion or with `?nointro`.
+- **Screenshot mode:** `H` (or `U`) hides all UI. `Esc` or the "Show interface" button restores it. On ASCENT, use `U` because `H` isn't bound there.
+- **Sound:** every sound is synthesized live with the Web Audio API, so the app ships no audio files. It's muted by default. Nothing plays until you unmute, and the audio context only starts after a user gesture. Mute and volume persist. Sounds include UI ticks, an ambient drone per mode, an ASCENT engine rumble that follows throttle and dynamic pressure, countdown beeps and a staging thunk. Reduced motion ("calm mode") turns off drones and softens ticks. **Sound is cinematic, not a model of acoustics in space.**
+- **Mobile:** below 1024 px the nav collapses into a menu. Below 768 px the side panels become bottom sheets. Safe-area insets are respected, and touch targets are 44 px on coarse pointers. The globe and sky take drag and pinch. ASCENT adds an on-screen attitude pad, a throttle slider and LAUNCH/STAGE, assist, warp, camera and map buttons.
+
 ## Keyboard
 
-- **Global:** `⌘K` or `/` opens search.
+- **Global:**
+  - `⌘K` or `/`: search
+  - `H` or `U`: hide UI
+  - `Esc`: show UI
 - **Ascent:**
   - `Space`: countdown, then staging
   - `Shift`/`Ctrl`: throttle up/down. `Z`/`X`: full/cut
