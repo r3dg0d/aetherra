@@ -4,17 +4,22 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 const vert = /* glsl */ `
-attribute float life; attribute float seed; uniform float dpr; uniform float scale; varying float vLife; varying float vSeed;
+#include <common>
+#include <logdepthbuf_pars_vertex>
+attribute float life; attribute float seed; uniform float dpr; uniform float uSize; varying float vLife; varying float vSeed;
 void main() {
   vLife = life; vSeed = seed;
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
-  gl_PointSize = clamp(scale * (0.4 + 2.2 * life) * dpr / max(-mv.z, 1e-5), 1.0, 256.0);
+  gl_PointSize = clamp(uSize * (0.4 + 1.6 * life) * dpr, 1.0, 200.0);
   gl_Position = projectionMatrix * mv;
+  #include <logdepthbuf_vertex>
 }`;
 // HDR core (> 1) so bloom picks up the hot exhaust; low in the atmosphere the tail turns to grey smoke.
 const frag = /* glsl */ `
+#include <logdepthbuf_pars_fragment>
 uniform float smoke; uniform float vac; varying float vLife; varying float vSeed;
 void main() {
+  #include <logdepthbuf_fragment>
   vec2 p = gl_PointCoord - 0.5; float d = length(p); if (d > 0.5) discard;
   float soft = smoothstep(0.5, 0.0, d);
   vec3 hot = vec3(2.4, 2.0, 1.4);
@@ -23,7 +28,7 @@ void main() {
   vec3 vacc = vec3(0.9, 0.75, 1.4);
   vec3 col = mix(hot, warm, smoothstep(0.0, 0.35, vLife));
   col = mix(col, mix(sm, vacc, vac), smoothstep(0.3, 0.9, vLife) * mix(smoke, 0.6, vac));
-  float a = soft * (1.0 - smoothstep(0.5, 1.0, vLife)) * (0.32 - 0.15 * vSeed * vLife);
+  float a = pow(soft, 1.3) * (1.0 - smoothstep(0.45, 1.0, vLife)) * (0.42 - 0.2 * vSeed * vLife);
   gl_FragColor = vec4(col, a);
   #include <colorspace_fragment>
 }`;
@@ -44,16 +49,16 @@ export function Plume({ count, get }: { count: number; get: () => { throttle: nu
     return g;
   }, [count]);
   const parts = useMemo(() => Array.from({ length: count }, () => ({ age: Math.random(), life: 0.5 + Math.random() * 0.6, dir: new THREE.Vector3(), speed: 0 })), [count]);
-  const uniforms = useMemo(() => ({ dpr: { value: 1 }, scale: { value: 0.006 }, smoke: { value: 1 }, vac: { value: 0 } }), []);
+  const uniforms = useMemo(() => ({ dpr: { value: 1 }, uSize: { value: 10 }, smoke: { value: 1 }, vac: { value: 0 } }), []);
   const pts = useRef<THREE.Points>(null);
   useFrame((st, dt) => {
     const { throttle, density } = get();
     uniforms.dpr.value = st.viewport.dpr;
     const vac = 1 - Math.min(1, Math.sqrt(density));
     uniforms.vac.value = vac; uniforms.smoke.value = Math.min(1, density * 4);
-    const cam = st.camera as THREE.PerspectiveCamera;
-    const proj = st.size.height / (2 * Math.tan(((cam.fov ?? 50) * Math.PI) / 360));
-    uniforms.scale.value = (1.6 + 10 * vac) * m * (0.5 + 0.5 * throttle) * proj;
+    // Screen-space size from camera distance (the vehicle sits at the floating origin).
+    const dist = Math.max(0.01, st.camera.position.length());
+    uniforms.uSize.value = Math.min(160, 22 * (0.12 / dist) * (1 + 2.5 * vac) * (0.5 + 0.5 * throttle) * (st.size.height / 800));
     const pos = geo.attributes.position as THREE.BufferAttribute, life = geo.attributes.life as THREE.BufferAttribute;
     const spread = 0.05 + 0.7 * vac;
     for (let i = 0; i < count; i++) {

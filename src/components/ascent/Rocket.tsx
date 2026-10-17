@@ -30,7 +30,7 @@ export const Rocket = forwardRef<THREE.Group, { stage: number; thrust: number }>
         <group position={[0, -2 * m, 0]} scale={[1, 0.5 + thrust, 1]}>
           <mesh position={[0, -9 * m, 0]} rotation={[Math.PI, 0, 0]}><coneGeometry args={[1.6 * m, 18 * m, 24, 1, true]} /><meshBasicMaterial color="#FFB454" transparent opacity={0.75} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>
           <mesh position={[0, -5 * m, 0]} rotation={[Math.PI, 0, 0]}><coneGeometry args={[0.9 * m, 10 * m, 24, 1, true]} /><meshBasicMaterial color="#F4F7FF" transparent opacity={0.9} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} /></mesh>
-          <pointLight color="#FFB454" intensity={4} distance={0.4} />
+          <pointLight color="#FFB454" intensity={0.06 * thrust} distance={0.25} decay={1} />
         </group>
       )}
     </group>

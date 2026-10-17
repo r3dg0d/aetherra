@@ -94,6 +94,7 @@ function World({ sim, cam, onHud }: { sim: React.RefObject<Sim>; cam: Cam; onHud
     if (!(scene.background instanceof THREE.Color)) scene.background = skyCol.clone();
     else (scene.background as THREE.Color).copy(skyCol);
     if (starGroup.current) starGroup.current.visible = hKm > 22;
+    if (pad.current) pad.current.visible = hKm < 6;
     // Audio: countdown beeps once per second, engine rumble from throttle/dynamic pressure/air density.
     if (S.countdown != null) {
       const sec = Math.ceil(S.countdown);
@@ -135,8 +136,8 @@ function World({ sim, cam, onHud }: { sim: React.RefObject<Sim>; cam: Cam; onHud
       <group ref={pad}>
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.0005, 0]}><circleGeometry args={[40, 64]} /><meshStandardMaterial color="#2b3a2e" roughness={1} /></mesh>
         <mesh position={[0, -0.0002, 0]}><cylinderGeometry args={[0.03, 0.03, 0.0006, 32]} /><meshStandardMaterial color="#5a5f6b" /></mesh>
-        <mesh position={[0.009, 0.035, 0]}><boxGeometry args={[0.004, 0.07, 0.004]} /><meshStandardMaterial color="#7a3b2e" metalness={0.6} /></mesh>
-        <mesh position={[0.005, 0.06, 0]}><boxGeometry args={[0.008, 0.001, 0.0015]} /><meshStandardMaterial color="#7a3b2e" /></mesh>
+        <mesh position={[-0.009, 0.035, 0]}><boxGeometry args={[0.004, 0.07, 0.004]} /><meshStandardMaterial color="#7a3b2e" metalness={0.6} /></mesh>
+        <mesh position={[-0.005, 0.06, 0]}><boxGeometry args={[0.008, 0.001, 0.0015]} /><meshStandardMaterial color="#7a3b2e" /></mesh>
       </group>
       <group ref={rocket}>
         <Rocket stage={stage} thrust={thr} />

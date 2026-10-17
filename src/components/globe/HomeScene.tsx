@@ -16,9 +16,11 @@ import { IntroOrbit } from "@/components/three/CameraRig";
 export default function HomeScene({ intro = false, onIntroDone }: { intro?: boolean; onIntroDone?: () => void }) {
   const q = useQuality();
   const reduced = useReducedMotion();
+  // Portrait phones need the camera further out to fit the globe.
+  const home: [number, number, number] = typeof window !== "undefined" && window.innerWidth / window.innerHeight < 0.8 ? [3.9, 2.0, 4.6] : [2.2, 1.1, 2.6];
   const onStatus = useCallback((s: string) => useView.getState().setData("LIVE", `Sky & Sun: ephemeris for now · ${s}`), []);
   return (
-    <Canvas camera={{ position: intro ? [-14, 6.5, -26] : [2.2, 1.1, 2.6], fov: 40, near: 0.005, far: 3000 }} dpr={q.dpr} gl={{ antialias: q.antialias && !q.bloom, powerPreference: "high-performance" }} aria-label="3D Earth with real-time day/night, stars and ISS">
+    <Canvas camera={{ position: intro ? [-14, 6.5, -26] : home, fov: 40, near: 0.005, far: 3000 }} dpr={q.dpr} gl={{ antialias: q.antialias && !q.bloom, powerPreference: "high-performance" }} aria-label="3D Earth with real-time day/night, stars and ISS">
       <color attach="background" args={["#030409"]} />
       <Suspense fallback={null}>
         <Starfield maxMag={q.starMag} milkyWay={q.milkyWay} />
@@ -27,7 +29,7 @@ export default function HomeScene({ intro = false, onIntroDone }: { intro?: bool
         <IssMarker onStatus={onStatus} />
       </Suspense>
       <OrbitControls makeDefault enablePan={false} minDistance={1.15} maxDistance={120} autoRotate={!reduced && !intro} autoRotateSpeed={0.25} enableDamping dampingFactor={0.06} rotateSpeed={0.5} zoomSpeed={0.6} />
-      <IntroOrbit active={intro && !reduced} onDone={() => onIntroDone?.()} />
+      <IntroOrbit to={home} active={intro && !reduced} onDone={() => onIntroDone?.()} />
       <CameraTelemetry />
       <SceneFx />
     </Canvas>
