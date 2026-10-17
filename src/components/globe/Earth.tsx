@@ -53,7 +53,7 @@ void main() {
 }`;
 
 /** Earth-fixed globe of radius 1 (6371 km). Sun direction is updated from the simulation clock. */
-export function Earth({ quality = "medium", onSun }: { quality?: Quality; onSun?: (v: THREE.Vector3) => void }) {
+export function Earth({ quality = "medium", onSun, fixedSunLocal, segments }: { quality?: Quality; onSun?: (v: THREE.Vector3) => void; fixedSunLocal?: [number, number, number]; segments?: number }) {
   const res = quality === "high" ? "4k" : "2k";
   const [day, night] = useLoader(THREE.TextureLoader, [`/textures/earth_day_${res}.jpg`, `/textures/earth_night_${res}.jpg`]);
   const gl = useThree((s) => s.gl);
@@ -64,6 +64,7 @@ export function Earth({ quality = "medium", onSun }: { quality?: Quality; onSun?
   const atmo = useMemo(() => ({ sunDir: uniforms.sunDir }), [uniforms]);
   const last = useRef(0);
   useFrame(() => {
+    if (fixedSunLocal) { uniforms.sunDir.value.set(...fixedSunLocal).normalize(); return; }
     const d = getSimDate();
     if (Math.abs(d.getTime() - last.current) < 1000) return;
     last.current = d.getTime();
@@ -71,7 +72,7 @@ export function Earth({ quality = "medium", onSun }: { quality?: Quality; onSun?
     uniforms.sunDir.value.set(...latLonToVec3(s.lat, s.lon)).normalize();
     onSun?.(uniforms.sunDir.value);
   });
-  const seg = quality === "low" ? 96 : 160;
+  const seg = segments ?? (quality === "low" ? 96 : 160);
   return (
     <group>
       <mesh name="earth">
