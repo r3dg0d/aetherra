@@ -1,4 +1,5 @@
 "use client";
+import { useAmbient } from "@/lib/audio/useAudio";
 import { useEffect, useState } from "react";
 import { DataBadge } from "@/components/shell/DataBadge";
 import type { DataClass } from "@/lib/classification";
@@ -17,6 +18,7 @@ const STATIC = [
 ];
 
 export function StatusClient() {
+  useAmbient("status");
   const [d, setD] = useState<Resp | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => { fetch("/api/providers").then((r) => r.json()).then(setD).catch((e) => setErr(String(e))); }, []);

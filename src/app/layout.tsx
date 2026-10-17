@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
 };
 
-export const viewport: Viewport = { themeColor: "#030409", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#030409", width: "device-width", initialScale: 1, viewportFit: "cover", colorScheme: "dark" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

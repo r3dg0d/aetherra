@@ -6,8 +6,15 @@ import * as THREE from "three";
 import { Earth } from "@/components/globe/Earth";
 import { Starfield } from "@/components/globe/Starfield";
 import { Rocket } from "./Rocket";
+import { Plume } from "./Plume";
 import { MapView } from "./MapView";
-import { useApp, useView } from "@/lib/store/app";
+import { TouchControls } from "./TouchControls";
+import { useView } from "@/lib/store/app";
+import { useQuality } from "@/lib/quality";
+import { SceneFx } from "@/components/three/SceneFx";
+import { Sheet } from "@/components/shell/Sheet";
+import { audio } from "@/lib/audio/engine";
+import { useAmbient } from "@/lib/audio/useAudio";
 import { DataBadge } from "@/components/shell/DataBadge";
 import {
   AETHER_1, OMEGA_EARTH, R_EARTH, advance, altitude, autopilot, initialState, isOrbitInserted, orbitalElements,
@@ -17,6 +24,7 @@ import {
 const SITES = [{ name: "Florida coast (28.5°N)", lat: 28.5, lon: -80.6 }, { name: "Equatorial (Kourou-like, 5.2°N)", lat: 5.2, lon: -52.8 }, { name: "Polar-capable (34.6°N)", lat: 34.6, lon: -120.6 }];
 const CAMS = ["chase", "wide", "ground", "orbital"] as const;
 type Cam = (typeof CAMS)[number];
+const SPACE = new THREE.Color("#030409");
 const toScene = (v: [number, number, number]): [number, number, number] => [v[0] / 1000, v[2] / 1000, -v[1] / 1000];
 
 interface Sim { s: SimState; acc: number; warp: number; paused: boolean; countdown: number | null; t0: number | null; assist: boolean; events: string[]; inserted: boolean; history: [number, number, number][] }
@@ -38,7 +46,11 @@ function World({ sim, cam, onHud }: { sim: React.RefObject<Sim>; cam: Cam; onHud
   const pad = useRef<THREE.Group>(null);
   const { camera } = useThree();
   const controls = useRef<React.ComponentRef<typeof OrbitControls>>(null);
-  const quality = useApp((s) => s.quality);
+  const q = useQuality();
+  const scene = useThree((s) => s.scene);
+  const starGroup = useRef<THREE.Group>(null);
+  const skyCol = useMemo(() => new THREE.Color(), []);
+  const lastBeep = useRef<number | null>(null);
   const lastHud = useRef(0);
   const adjusting = useRef(true);
   useEffect(() => { adjusting.current = true; }, [cam]);
@@ -61,7 +73,7 @@ function World({ sim, cam, onHud }: { sim: React.RefObject<Sim>; cam: Cam; onHud
         if (S.assist && S.t0 != null) S.s = autopilot(S.s);
         const r = advance(S.s, S.acc, dt, S.warp);
         S.s = r.state; S.acc = r.accumulator;
-        if (S.s.stage !== prevStage) S.events.unshift(`Stage separation at T+${met(S)} s.`);
+        if (S.s.stage !== prevStage) { S.events.unshift(`Stage separation at T+${met(S)} s.`); audio.thunk(); }
         if (S.s.landedOrCrashed === "crashed") S.events.unshift("Vehicle impacted the surface. Press R to reset.");
         if (!S.inserted && isOrbitInserted(S.s.r, S.s.v)) { S.inserted = true; S.events.unshift(`ORBIT ACHIEVED at T+${met(S)} s (periapsis > 140 km).`); }
         if (S.history.length === 0 || state.clock.elapsedTime - lastHud.current > 0.5) { S.history.push(S.s.r); if (S.history.length > 4000) S.history.shift(); }
@@ -75,6 +87,21 @@ function World({ sim, cam, onHud }: { sim: React.RefObject<Sim>; cam: Cam; onHud
       const dir = new THREE.Vector3(...toScene(thrustDirection(S.s.r, S.s.pitchDeg, S.s.headingDeg).map((x) => x * 1000) as [number, number, number])).normalize();
       rocket.current.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
     }
+    // Atmospheric colour shift: blue daytime sky near the ground fading to black space by ~80 km.
+    const hKm = altitude(S.s.r) / 1000;
+    const k = Math.min(1, Math.max(0, 1 - Math.exp(-Math.max(0, hKm) / 14)));
+    skyCol.setRGB(0.36, 0.6, 0.9).lerp(SPACE, k);
+    if (!(scene.background instanceof THREE.Color)) scene.background = skyCol.clone();
+    else (scene.background as THREE.Color).copy(skyCol);
+    if (starGroup.current) starGroup.current.visible = hKm > 22;
+    // Audio: countdown beeps once per second, engine rumble from throttle/dynamic pressure/air density.
+    if (S.countdown != null) {
+      const sec = Math.ceil(S.countdown);
+      if (lastBeep.current !== sec) { lastBeep.current = sec; if (sec <= 10 && sec >= 1) audio.beep(sec); }
+    } else lastBeep.current = null;
+    const firing = S.s.engineOn && S.s.prop[S.s.stage] > 0 && !S.paused;
+    if (firing) audio.setEngine(S.s.throttle, S.s.dynamicPressure, Math.min(1, density(altitude(S.s.r)) / RHO0));
+    else audio.stopEngine();
     // Camera modes
     const up = rp.clone().normalize();
     if (cam === "ground" && pad.current) {
@@ -95,13 +122,15 @@ function World({ sim, cam, onHud }: { sim: React.RefObject<Sim>; cam: Cam; onHud
     }
   });
   useEffect(() => { camera.position.set(0.12, 0.05, 0.12); camera.up.copy(padLocal.clone().normalize()); }, [camera, padLocal]);
+  useEffect(() => () => audio.stopEngine(), []);
+  const plumeState = () => { const S = sim.current; const on = S.s.engineOn && S.s.prop[S.s.stage] > 0; return { throttle: on ? S.s.throttle : 0, density: Math.min(1, density(altitude(S.s.r)) / RHO0) }; };
   const padUp = padLocal.clone().normalize();
   return (
     <>
       <ambientLight intensity={0.25} />
       <directionalLight position={new THREE.Vector3(...sunDir).multiplyScalar(1000)} intensity={2.4} />
       <group ref={earth}>
-        <Suspense fallback={null}><group scale={R_EARTH / 1000 - 0.6}><Earth quality={quality} fixedSunLocal={sunDir} segments={256} /></group></Suspense>
+        <Suspense fallback={null}><group scale={R_EARTH / 1000 - 0.6}><Earth fixedSunLocal={sunDir} segments={256} /></group></Suspense>
       </group>
       <group ref={pad}>
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.0005, 0]}><circleGeometry args={[40, 64]} /><meshStandardMaterial color="#2b3a2e" roughness={1} /></mesh>
@@ -109,9 +138,13 @@ function World({ sim, cam, onHud }: { sim: React.RefObject<Sim>; cam: Cam; onHud
         <mesh position={[0.009, 0.035, 0]}><boxGeometry args={[0.004, 0.07, 0.004]} /><meshStandardMaterial color="#7a3b2e" metalness={0.6} /></mesh>
         <mesh position={[0.005, 0.06, 0]}><boxGeometry args={[0.008, 0.001, 0.0015]} /><meshStandardMaterial color="#7a3b2e" /></mesh>
       </group>
-      <Rocket ref={rocket} stage={stage} thrust={thr} />
-      <group position={padUp.clone().multiplyScalar(0)}><Starfield radius={150000} lines={false} maxMag={5.5} /></group>
+      <group ref={rocket}>
+        <Rocket stage={stage} thrust={thr} />
+        <Plume count={q.particles} get={plumeState} />
+      </group>
+      <group ref={starGroup} position={padUp.clone().multiplyScalar(0)}><Starfield radius={150000} lines={false} maxMag={5.5} milkyWay={q.milkyWay} /></group>
       <OrbitControls ref={controls} enabled={cam !== "ground"} enablePan={false} minDistance={0.03} maxDistance={60000} enableDamping />
+      <SceneFx bloomThreshold={1.0} bloomIntensity={0.9} />
     </>
   );
 }
@@ -124,6 +157,7 @@ export default function AscentSim() {
   const [site, setSite] = useState(SITES[0]);
   const keys = useRef(new Set<string>());
   useEffect(() => { useView.getState().setData("SIMULATED", "ASCENT: fictional vehicle, physics simulation"); useView.getState().setCamera(null); }, []);
+  useAmbient("ascent");
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -133,7 +167,7 @@ export default function AscentSim() {
       if (e.code === "Space") {
         e.preventDefault();
         if (S.s.landedOrCrashed === "pad" && !S.s.engineOn && S.countdown == null) { S.countdown = 10; S.events.unshift("Countdown started: T−10 s."); }
-        else if (S.t0 != null) { const before = S.s.stage; S.s = stageSeparate(S.s); if (S.s.stage !== before) { S.s = { ...S.s, engineOn: S.s.prop[S.s.stage] > 0 }; S.events.unshift(`Manual staging at T+${met(S)} s.`); } }
+        else if (S.t0 != null) { const before = S.s.stage; S.s = stageSeparate(S.s); if (S.s.stage !== before) { S.s = { ...S.s, engineOn: S.s.prop[S.s.stage] > 0 }; S.events.unshift(`Manual staging at T+${met(S)} s.`); audio.thunk(); } }
       }
       if (e.code === "KeyR") { sim.current = freshSim(site); }
       if (e.code === "KeyC") { setCam((c) => CAMS[(CAMS.indexOf(c) + 1) % CAMS.length]); }
@@ -172,64 +206,95 @@ export default function AscentSim() {
   const pFrac = Math.min(1, density(h) / RHO0);
   const twr = s && st ? ((st.thrustVac + (st.thrustSl - st.thrustVac) * pFrac) * s.throttle) / (mass * G0) : 0;
   const km = (m: number) => (Number.isFinite(m) ? `${(m / 1000).toFixed(1)} km` : "∞");
+  const S0 = () => sim.current;
+  const actions = {
+    launch: () => { const S = S0(); if (S.s.landedOrCrashed === "pad" && S.countdown == null && !S.s.engineOn) { S.countdown = 10; S.events.unshift("Countdown started: T−10 s."); } },
+    stage: () => { const S = S0(); if (S.t0 == null) return; const before = S.s.stage; S.s = stageSeparate(S.s); if (S.s.stage !== before) { S.s = { ...S.s, engineOn: S.s.prop[S.s.stage] > 0 }; S.events.unshift(`Manual staging at T+${met(S)} s.`); audio.thunk(); } },
+    throttle: (v: number) => { const S = S0(); S.s = { ...S.s, throttle: v, engineOn: S.t0 != null && v > 0 && S.s.prop[S.s.stage] > 0 ? true : S.s.engineOn }; },
+    hold: (code: string, on: boolean) => { if (on) keys.current.add(code); else keys.current.delete(code); },
+    assist: () => { S0().assist = !S0().assist; },
+    warp: (dir: 1 | -1) => { const S = S0(); S.warp = dir > 0 ? Math.min(1000, S.warp * (S.warp < 4 ? 2 : 5)) : Math.max(1, S.warp / (S.warp <= 4 ? 2 : 5)); },
+    cam: () => setCam((c) => CAMS[(CAMS.indexOf(c) + 1) % CAMS.length]),
+    map: () => setMap((m) => !m),
+    reset: () => { sim.current = freshSim(site); },
+    pause: () => { S0().paused = !S0().paused; },
+  };
   return (
     <div className="relative h-full w-full bg-space">
-      <Canvas camera={{ fov: 50, near: 0.0005, far: 400000 }} gl={{ logarithmicDepthBuffer: true, antialias: true }} aria-label="ASCENT 3D flight view">
+      <Canvas camera={{ fov: 50, near: 0.0005, far: 400000 }} gl={{ logarithmicDepthBuffer: true, antialias: false }} aria-label="ASCENT 3D flight view">
         <color attach="background" args={["#030409"]} />
         <World sim={sim} cam={cam} onHud={(x) => setHud({ ...x, events: [...x.events] })} key={site.name} />
       </Canvas>
       {map && hud && <div className="absolute inset-0 z-10 bg-space/80"><MapView sim={hud} /></div>}
-      <div className="absolute left-4 top-20 z-20 w-[270px] space-y-2">
-        <div className="glass p-3 text-[12px]">
-          <div className="mb-1 flex items-center justify-between"><span className="label">ASCENT · AETHER-1</span><DataBadge value="SIMULATED" size="xs" /></div>
-          {hud?.countdown != null && <p className="mono text-[26px] text-sim">T−{Math.ceil(hud.countdown)}</p>}
-          {hud && <p className="mono text-[13px]">MET {hud.t0 == null ? "T−" + (hud.countdown != null ? Math.ceil(hud.countdown) : "--") : `T+${(hud.s.t - hud.t0).toFixed(1)}`} s</p>}
-          <dl className="mono mt-1 grid grid-cols-2 gap-y-0.5 text-[11px]">
-            <dt className="text-starlight/50">Altitude</dt><dd className="text-right">{km(h)}</dd>
-            <dt className="text-starlight/50">Velocity (inertial)</dt><dd className="text-right">{s ? vec.norm(s.v).toFixed(0) : 0} m/s</dd>
-            <dt className="text-starlight/50">Velocity (surface)</dt><dd className="text-right">{vSurf.toFixed(0)} m/s</dd>
-            <dt className="text-starlight/50">Apoapsis</dt><dd className="text-right">{el ? km(el.apoapsisAlt) : "—"}</dd>
-            <dt className="text-starlight/50">Periapsis</dt><dd className={`text-right ${el && el.periapsisAlt > 140000 ? "text-teal" : ""}`}>{el ? km(el.periapsisAlt) : "—"}</dd>
-            <dt className="text-starlight/50">Inclination</dt><dd className="text-right">{el ? el.inclinationDeg.toFixed(2) : "—"}°</dd>
-            <dt className="text-starlight/50">Downrange</dt><dd className="text-right">{s ? km(s.downrangeM) : "—"}</dd>
-            <dt className="text-starlight/50">Dyn. pressure</dt><dd className="text-right">{s ? (s.dynamicPressure / 1000).toFixed(1) : 0} kPa</dd>
-            <dt className="text-starlight/50">Max-Q</dt><dd className="text-right">{s ? (s.maxQ / 1000).toFixed(1) : 0} kPa</dd>
-          </dl>
+      {/* Compact HUD strip (always visible, phone-friendly) */}
+      <div className="ui-chrome pointer-events-none absolute inset-x-0 z-20 flex justify-center px-2 md:hidden" style={{ top: "calc(env(safe-area-inset-top) + 64px)" }}>
+        <div className="glass mono grid grid-cols-4 gap-x-3 px-3 py-1.5 text-[11px]" data-testid="ascent-hud-compact">
+          <span className="label">MET</span><span className="label">ALT</span><span className="label">AP</span><span className="label">PE</span>
+          <span>{hud?.t0 == null ? (hud?.countdown != null ? `T−${Math.ceil(hud.countdown)}` : "--") : `+${(hud.s.t - hud.t0).toFixed(0)}s`}</span>
+          <span>{(h / 1000).toFixed(1)}</span><span>{el && Number.isFinite(el.apoapsisAlt) ? (el.apoapsisAlt / 1000).toFixed(0) : "—"}</span>
+          <span className={el && el.periapsisAlt > 140000 ? "text-teal" : ""}>{el ? (el.periapsisAlt / 1000).toFixed(0) : "—"}</span>
         </div>
-        <div className="glass p-3 text-[12px]">
-          <dl className="mono grid grid-cols-2 gap-y-0.5 text-[11px]">
-            <dt className="text-starlight/50">Stage</dt><dd className="text-right">{s ? `${s.stage + 1}/${AETHER_1.stages.length}` : "—"}</dd>
-            <dt className="text-starlight/50">Throttle</dt><dd className="text-right">{s ? (s.throttle * 100).toFixed(0) : 0}%{s?.engineOn ? " 🔥" : ""}</dd>
-            <dt className="text-starlight/50">Propellant</dt><dd className="text-right">{s && st ? ((s.prop[s.stage] / st.propMass) * 100).toFixed(1) : 0}%</dd>
-            <dt className="text-starlight/50">Mass</dt><dd className="text-right">{(mass / 1000).toFixed(1)} t</dd>
-            <dt className="text-starlight/50">TWR</dt><dd className="text-right">{twr.toFixed(2)}</dd>
-            <dt className="text-starlight/50">Pitch / heading</dt><dd className="text-right">{s?.pitchDeg.toFixed(1)}° / {s?.headingDeg.toFixed(0)}°</dd>
-            <dt className="text-starlight/50">Time warp</dt><dd className="text-right">×{hud?.warp ?? 1}</dd>
-            <dt className="text-starlight/50">Camera</dt><dd className="text-right">{cam}</dd>
-          </dl>
-          <div className="mt-2 flex flex-wrap gap-1">
-            <button className="btn" onClick={() => { const S = sim.current; if (S.s.landedOrCrashed === "pad" && S.countdown == null && !S.s.engineOn) { S.countdown = 10; S.events.unshift("Countdown started: T−10 s."); } }}>Launch</button>
-            <button className={`btn ${hud?.assist ? "btn-primary" : ""}`} onClick={() => { sim.current.assist = !sim.current.assist; }} aria-pressed={!!hud?.assist}>Assist (P)</button>
-            <button className="btn" onClick={() => setMap((m) => !m)}>Map (M)</button>
-            <button className="btn" onClick={() => { sim.current = freshSim(site); }}>Reset (R)</button>
+      </div>
+      <Sheet title="Flight data" testId="ascent-sheet">
+        <div className="absolute left-4 top-20 z-20 w-[270px] space-y-2">
+          <div className="glass p-3 text-[12px]">
+            <div className="mb-1 flex items-center justify-between"><span className="label">ASCENT · AETHER-1</span><DataBadge value="SIMULATED" size="xs" /></div>
+            {hud?.countdown != null && <p className="mono text-[26px] text-sim">T−{Math.ceil(hud.countdown)}</p>}
+            {hud && <p className="mono text-[13px]" data-testid="ascent-met">MET {hud.t0 == null ? "T−" + (hud.countdown != null ? Math.ceil(hud.countdown) : "--") : `T+${(hud.s.t - hud.t0).toFixed(1)}`} s</p>}
+            <dl className="mono mt-1 grid grid-cols-2 gap-y-0.5 text-[11px]">
+              <dt className="text-starlight/50">Altitude</dt><dd className="text-right" data-testid="ascent-alt">{km(h)}</dd>
+              <dt className="text-starlight/50">Velocity (inertial)</dt><dd className="text-right">{s ? vec.norm(s.v).toFixed(0) : 0} m/s</dd>
+              <dt className="text-starlight/50">Velocity (surface)</dt><dd className="text-right">{vSurf.toFixed(0)} m/s</dd>
+              <dt className="text-starlight/50">Apoapsis</dt><dd className="text-right">{el ? km(el.apoapsisAlt) : "—"}</dd>
+              <dt className="text-starlight/50">Periapsis</dt><dd className={`text-right ${el && el.periapsisAlt > 140000 ? "text-teal" : ""}`} data-testid="ascent-peri">{el ? km(el.periapsisAlt) : "—"}</dd>
+              <dt className="text-starlight/50">Inclination</dt><dd className="text-right">{el ? el.inclinationDeg.toFixed(2) : "—"}°</dd>
+              <dt className="text-starlight/50">Downrange</dt><dd className="text-right">{s ? km(s.downrangeM) : "—"}</dd>
+              <dt className="text-starlight/50">Dyn. pressure</dt><dd className="text-right">{s ? (s.dynamicPressure / 1000).toFixed(1) : 0} kPa</dd>
+              <dt className="text-starlight/50">Max-Q</dt><dd className="text-right">{s ? (s.maxQ / 1000).toFixed(1) : 0} kPa</dd>
+            </dl>
           </div>
-          <label className="mt-2 block text-[11px]"><span className="label">Launch site</span>
-            <select className="input mt-1 w-full" value={site.name} onChange={(e) => { const x = SITES.find((s) => s.name === e.target.value)!; setSite(x); sim.current = freshSim(x); }}>{SITES.map((s) => <option key={s.name}>{s.name}</option>)}</select></label>
+          <div className="glass p-3 text-[12px]">
+            <dl className="mono grid grid-cols-2 gap-y-0.5 text-[11px]">
+              <dt className="text-starlight/50">Stage</dt><dd className="text-right">{s ? `${s.stage + 1}/${AETHER_1.stages.length}` : "—"}</dd>
+              <dt className="text-starlight/50">Throttle</dt><dd className="text-right">{s ? (s.throttle * 100).toFixed(0) : 0}%{s?.engineOn ? " 🔥" : ""}</dd>
+              <dt className="text-starlight/50">Propellant</dt><dd className="text-right">{s && st ? ((s.prop[s.stage] / st.propMass) * 100).toFixed(1) : 0}%</dd>
+              <dt className="text-starlight/50">Mass</dt><dd className="text-right">{(mass / 1000).toFixed(1)} t</dd>
+              <dt className="text-starlight/50">TWR</dt><dd className="text-right">{twr.toFixed(2)}</dd>
+              <dt className="text-starlight/50">Pitch / heading</dt><dd className="text-right">{s?.pitchDeg.toFixed(1)}° / {s?.headingDeg.toFixed(0)}°</dd>
+              <dt className="text-starlight/50">Time warp</dt><dd className="text-right" data-testid="ascent-warp">×{hud?.warp ?? 1}</dd>
+              <dt className="text-starlight/50">Camera</dt><dd className="text-right">{cam}</dd>
+            </dl>
+            <div className="mt-2 flex flex-wrap gap-1">
+              <button className="btn" onClick={actions.launch}>Launch</button>
+              <button className={`btn ${hud?.assist ? "btn-primary" : ""}`} onClick={actions.assist} aria-pressed={!!hud?.assist}>Assist (P)</button>
+              <button className="btn" onClick={actions.map}>Map (M)</button>
+              <button className="btn" onClick={actions.cam}>Camera (C)</button>
+              <button className="btn" onClick={() => actions.warp(-1)} aria-label="Slower time warp">−warp</button>
+              <button className="btn" onClick={() => actions.warp(1)} aria-label="Faster time warp" data-testid="warp-up">+warp</button>
+              <button className="btn" onClick={actions.reset}>Reset (R)</button>
+            </div>
+            <label className="mt-2 block text-[11px]"><span className="label">Launch site</span>
+              <select className="input mt-1 w-full" value={site.name} onChange={(e) => { const x = SITES.find((s) => s.name === e.target.value)!; setSite(x); sim.current = freshSim(x); }}>{SITES.map((s) => <option key={s.name}>{s.name}</option>)}</select></label>
+          </div>
         </div>
-      </div>
-      <div className="absolute right-4 top-20 z-20 w-[280px] space-y-2">
-        {hud?.inserted && <div className="glass border-teal/50 p-3 text-center"><p className="text-[11px] tracking-[0.3em] text-teal">ORBIT ACHIEVED</p><p className="mono text-[11px] text-starlight/60">{el && `${km(el.periapsisAlt)} × ${km(el.apoapsisAlt)} · ${(el.periodS / 60).toFixed(1)} min`}</p></div>}
-        <div className="glass p-3 text-[11px]">
-          <p className="label mb-1">Flight log</p>
-          <ul className="scroll-thin max-h-40 space-y-0.5 overflow-y-auto">{hud?.events.slice(0, 12).map((e, i) => <li key={i} className={i === 0 ? "text-starlight" : "text-starlight/50"}>{e}</li>)}</ul>
-          {hud?.paused && <p className="mt-1 text-sim">PAUSED (Esc)</p>}
+        <div className="absolute right-4 top-20 z-20 w-[280px] space-y-2">
+          {hud?.inserted && <div className="glass border-teal/50 p-3 text-center" data-testid="orbit-achieved"><p className="text-[11px] tracking-[0.3em] text-teal">ORBIT ACHIEVED</p><p className="mono text-[11px] text-starlight/60">{el && `${km(el.periapsisAlt)} × ${km(el.apoapsisAlt)} · ${(el.periodS / 60).toFixed(1)} min`}</p></div>}
+          <div className="glass p-3 text-[11px]">
+            <p className="label mb-1">Flight log</p>
+            <ul className="scroll-thin max-h-40 space-y-0.5 overflow-y-auto" data-testid="flight-log">{hud?.events.slice(0, 12).map((e, i) => <li key={i} className={i === 0 ? "text-starlight" : "text-starlight/50"}>{e}</li>)}</ul>
+            {hud?.paused && <p className="mt-1 text-sim">PAUSED (Esc)</p>}
+          </div>
+          <div className="glass p-3 text-[10px] leading-relaxed text-starlight/55">
+            <p className="label mb-1">Controls</p>
+            SPACE launch / stage · SHIFT/CTRL throttle ± · Z/X full/cut · W/S pitch ∓ · A/D heading · P assist · C camera · M map · , . time warp · R reset · Esc pause
+            <p className="mt-1">Touch: on-screen throttle, attitude pad, STAGE and LAUNCH buttons.</p>
+            <p className="mt-1">Inverse-square gravity, exponential atmosphere (H=8.5 km) with drag relative to the rotating air, Isp interpolated sea level→vacuum, RK4 at 50 Hz independent of frame rate. Orbit = periapsis above 140 km.</p>
+            <p className="mt-1 text-starlight/45">Sound is cinematic: engine rumble follows throttle and dynamic pressure and fades as the air thins. It is not a model of real acoustics.</p>
+          </div>
         </div>
-        <div className="glass p-3 text-[10px] leading-relaxed text-starlight/55">
-          <p className="label mb-1">Controls</p>
-          SPACE launch / stage · SHIFT/CTRL throttle ± · Z/X full/cut · W/S pitch ∓ · A/D heading · P assist · C camera · M map · , . time warp · R reset · Esc pause
-          <p className="mt-1">Inverse-square gravity, exponential atmosphere (H=8.5 km) with drag relative to the rotating air, Isp interpolated sea level→vacuum, RK4 at 50 Hz independent of frame rate. Orbit = periapsis above 140 km.</p>
-        </div>
-      </div>
+      </Sheet>
+      {hud?.inserted && <div className="ui-chrome pointer-events-none absolute inset-x-0 top-[120px] z-20 text-center md:hidden"><span className="glass px-3 py-1 text-[11px] tracking-[0.3em] text-teal">ORBIT ACHIEVED</span></div>}
+      <TouchControls throttle={s?.throttle ?? 0} assist={!!hud?.assist} padReady={!!hud && hud.t0 == null && hud.countdown == null} actions={actions} />
     </div>
   );
 }

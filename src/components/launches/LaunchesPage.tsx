@@ -1,4 +1,5 @@
 "use client";
+import { useAmbient } from "@/lib/audio/useAudio";
 import { useEffect, useMemo, useState } from "react";
 import type { NormalizedLaunch } from "@/providers/launches/types";
 import type { DataClass } from "@/lib/classification";
@@ -18,6 +19,7 @@ const SITES = [
 interface Resp { data: NormalizedLaunch[]; dataClass: DataClass; fetchedAt: string | null; stale: boolean; notice?: string; source?: string }
 
 export default function LaunchesPage() {
+  useAmbient("launches");
   const [tab, setTab] = useState<"upcoming" | "previous">("upcoming");
   const [operator, setOperator] = useState("");
   const [q, setQ] = useState("");

@@ -1,4 +1,6 @@
 "use client";
+import { Sheet } from "@/components/shell/Sheet";
+import { useAmbient } from "@/lib/audio/useAudio";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as sat from "@/lib/orbit/satellite";
@@ -28,6 +30,7 @@ interface Omm { OBJECT_NAME: string; OBJECT_ID: string; NORAD_CAT_ID: number; EP
 interface Feed { group: string; fetchedAt: string | null; stale: boolean; dataClass: string; notice?: string; omms: Omm[] }
 
 export default function OrbitPage() {
+  useAmbient("orbit");
   const [active, setActive] = useState<string[]>(["stations", "gps-ops", "weather"]);
   const [feeds, setFeeds] = useState<Record<string, Feed>>({});
   const [points, setPoints] = useState<SatPoints | null>(null);
@@ -130,12 +133,13 @@ export default function OrbitPage() {
   return (
     <div className="relative h-full w-full">
       <div className="absolute inset-0"><OrbitScene data={points} selected={selected} onPick={onPick} orbit={orbit} track={track} label={sel ? sel.omm.OBJECT_NAME : null} observer={observer} flyTo={flyTo} /></div>
+      <Sheet title={sel ? sel.omm.OBJECT_NAME : "Satellites"} openSignal={selected != null ? selected + 1 : 0} testId="orbit-sheet">
       <div className="absolute left-4 top-20 flex w-[280px] flex-col gap-2">
         <div className="glass p-3">
           <div className="label mb-2">Satellite groups · CelesTrak</div>
           {GROUPS.map((g) => (
-            <label key={g.id} className="flex items-center justify-between py-0.5 text-[12px]">
-              <span className="flex items-center gap-2"><input type="checkbox" checked={active.includes(g.id)} onChange={(e) => setActive(e.target.checked ? [...active, g.id] : active.filter((x) => x !== g.id))} /><span className="h-2 w-2 rounded-full" style={{ background: `rgb(${g.color.map((c) => c * 255).join(",")})` }} />{g.label}</span>
+            <label key={g.id} className="flex min-h-[30px] items-center justify-between py-0.5 text-[12px] pointer-coarse:min-h-[44px]">
+              <span className="flex items-center gap-2"><input type="checkbox" data-testid={`orbit-group-${g.id}`} checked={active.includes(g.id)} onChange={(e) => setActive(e.target.checked ? [...active, g.id] : active.filter((x) => x !== g.id))} /><span className="h-2 w-2 rounded-full" style={{ background: `rgb(${g.color.map((c) => c * 255).join(",")})` }} />{g.label}</span>
               <span className="mono text-[10px] text-starlight/45">{feeds[g.id] ? (feeds[g.id].dataClass === "UNAVAILABLE" ? "n/a" : feeds[g.id].omms.length) : active.includes(g.id) ? "…" : ""}</span>
             </label>
           ))}
@@ -184,6 +188,7 @@ export default function OrbitPage() {
         </aside>
       )}
       <div className="absolute bottom-16 left-1/2 -translate-x-1/2"><TimeControls compact /></div>
+      </Sheet>
     </div>
   );
 }

@@ -1,4 +1,6 @@
 "use client";
+import { Sheet } from "@/components/shell/Sheet";
+import { useAmbient } from "@/lib/audio/useAudio";
 import { useEffect, useRef, useState } from "react";
 import type * as CesiumNS from "cesium";
 import { useCesium, createViewer, osmLayer } from "@/components/cesium/useCesium";
@@ -13,6 +15,7 @@ interface Track { state: FlightState; trail: { lat: number; lon: number; alt: nu
 const PLANE = (color: string) => `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="${color}" d="M12 2c.6 0 1 .9 1 2v5l8 4.5v2l-8-2.5v4.5l2.5 2V21L12 20l-3.5 1v-1.5l2.5-2V13l-8 2.5v-2L11 9V4c0-1.1.4-2 1-2z"/></svg>`)}`;
 
 export default function FlightsPage() {
+  useAmbient("flights");
   const { Cesium: C, error } = useCesium();
   const el = useRef<HTMLDivElement>(null);
   const v = useRef<CesiumNS.Viewer | null>(null);
@@ -103,12 +106,13 @@ export default function FlightsPage() {
     <div className="relative h-full w-full bg-space">
       <div ref={el} className="absolute inset-0" aria-label="Aircraft map" />
       {error && <div className="absolute inset-0 grid place-items-center text-alert">{error}</div>}
+      <Sheet title={s ? (s.raw.callsign ?? s.raw.icao24) : `Flights${meta ? ` · ${meta.count}` : ""}`} openSignal={sel} testId="flights-sheet">
       <div className="absolute left-4 top-20 z-20 w-[300px] space-y-2">
         <div className="glass p-3 text-[12px]">
           <div className="mb-2 flex items-center justify-between"><span className="label">Flights</span>{meta && <DataBadge value={meta.dataClass} />}</div>
           <div className="flex gap-1" role="tablist">
-            <button role="tab" aria-selected={!demo} className={`btn ${!demo ? "btn-primary" : ""}`} onClick={() => setDemo(false)}>OpenSky</button>
-            <button role="tab" aria-selected={demo} className={`btn ${demo ? "btn-primary" : ""}`} onClick={() => setDemo(true)}>Demo (SIMULATED)</button>
+            <button role="tab" aria-selected={!demo} className={`btn ${!demo ? "btn-primary" : ""}`} onClick={() => setDemo(false)} data-testid="flights-live">OpenSky</button>
+            <button role="tab" aria-selected={demo} className={`btn ${demo ? "btn-primary" : ""}`} onClick={() => setDemo(true)} data-testid="flights-demo">Demo (SIMULATED)</button>
           </div>
           {meta && <p className="mt-2 text-starlight/70">{meta.count} aircraft in view{meta.auth ? ` · ${meta.auth} access` : ""}{meta.fetchedAt ? ` · fetched ${new Date(meta.fetchedAt).toLocaleTimeString()}` : ""}</p>}
           {meta?.notice && <p className={`mt-1 text-[11px] ${demo ? "text-sim" : "text-starlight/55"}`}>{meta.notice}</p>}
@@ -136,6 +140,7 @@ export default function FlightsPage() {
           <button className="btn mt-2" onClick={() => setSel(null)}>Close</button>
         </aside>
       )}
+      </Sheet>
     </div>
   );
 }

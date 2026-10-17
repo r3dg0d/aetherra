@@ -34,12 +34,12 @@ export function NotificationCenter() {
   const unread = items.filter((i) => !i.readAt).length;
   return (
     <div className="relative" ref={ref}>
-      <button className="glass relative p-2 text-starlight/70 hover:text-starlight" aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`} aria-expanded={open} onClick={() => { setOpen(!open); if (!open) load(); }}>
+      <button className="glass icon-btn relative" data-testid="notifications-open" aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`} aria-expanded={open} onClick={() => { setOpen(!open); if (!open) load(); }}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" /></svg>
         {unread > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-nebula px-1 text-[9px] mono">{unread}</span>}
       </button>
       {open && (
-        <div className="glass glass-strong fade-in absolute right-0 top-11 w-[340px] p-3" role="dialog" aria-label="Notification center">
+        <div className="glass glass-strong fade-in fixed inset-x-3 top-[calc(env(safe-area-inset-top)+64px)] max-h-[70dvh] overflow-y-auto p-3 md:absolute md:inset-x-auto md:right-0 md:top-12 md:w-[340px]" role="dialog" aria-label="Notification center">
           <div className="mb-2 flex items-center justify-between">
             <span className="label">Mission alerts</span>
             {unread > 0 && <button className="text-[11px] text-celestial" onClick={async () => { await fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clientId }) }); load(); }}>Mark all read</button>}

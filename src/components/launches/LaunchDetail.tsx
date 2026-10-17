@@ -1,4 +1,5 @@
 "use client";
+import { useAmbient } from "@/lib/audio/useAudio";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { NormalizedLaunch } from "@/providers/launches/types";
@@ -20,6 +21,7 @@ interface Detail {
 }
 
 export default function LaunchDetail({ id }: { id: string }) {
+  useAmbient("launches");
   const [d, setD] = useState<Detail | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [view, setView] = useState<"stream" | "recon">("stream");

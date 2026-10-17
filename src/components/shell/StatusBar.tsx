@@ -20,8 +20,8 @@ export function StatusBar() {
   const iso = new Date(sim).toISOString();
   const tc = timeClass(sim, t.mode, real);
   return (
-    <footer className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-3">
-      <div className="glass pointer-events-auto flex max-w-full items-center gap-4 overflow-x-auto px-4 py-2 text-[11px] mono text-starlight/80" role="status" aria-live="off">
+    <footer className="app-footer pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}>
+      <div className="glass pointer-events-auto flex max-w-full items-center gap-3 overflow-x-auto px-3 py-1.5 text-[11px] mono text-starlight/80 md:gap-4 md:px-4 md:py-2" role="status" aria-live="off">
         <span className="flex items-center gap-2 whitespace-nowrap">
           <span className="label">UTC</span>
           <span suppressHydrationWarning>{hydrated ? `${iso.slice(0, 10)} ${iso.slice(11, 19)}` : "—"}</span>

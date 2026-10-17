@@ -140,12 +140,26 @@ export function SkyCanvas({ observer, options, selection, onSelect, focus }: { o
     return () => cancelAnimationFrame(raf);
   }, [stars, cons]);
 
-  // Interaction: drag rotates azimuth, wheel zooms, click selects
+  // Interaction: drag rotates azimuth, wheel or two-finger pinch zooms, click/tap selects
   useEffect(() => {
     const cv = canvas.current!;
     let drag: { x: number; y: number; rot: number; moved: boolean } | null = null;
-    const down = (e: PointerEvent) => { drag = { x: e.clientX, y: e.clientY, rot: view.current.rot, moved: false }; cv.setPointerCapture(e.pointerId); };
+    const pointers = new Map<number, { x: number; y: number }>();
+    let pinch: { d: number; zoom: number } | null = null;
+    const pdist = () => { const [a, b] = [...pointers.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+    const down = (e: PointerEvent) => {
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      cv.setPointerCapture(e.pointerId);
+      if (pointers.size === 2) { pinch = { d: pdist(), zoom: view.current.zoom }; drag = null; return; }
+      drag = { x: e.clientX, y: e.clientY, rot: view.current.rot, moved: false };
+    };
     const move = (e: PointerEvent) => {
+      if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pinch && pointers.size >= 2) {
+        const v = view.current; v.zoom = Math.max(0.6, Math.min(12, pinch.zoom * (pdist() / Math.max(1, pinch.d))));
+        if (v.zoom <= 1.05) { v.panX = 0; v.panY = 0; }
+        return;
+      }
       const rect = cv.getBoundingClientRect();
       const R = Math.min(rect.width, rect.height) * 0.44 * view.current.zoom;
       const x = (e.clientX - rect.left - rect.width / 2) / R - view.current.panX, y = (e.clientY - rect.top - rect.height / 2) / R - view.current.panY;
@@ -160,10 +174,12 @@ export function SkyCanvas({ observer, options, selection, onSelect, focus }: { o
       view.current.rot = drag.rot - dx * 0.3 / view.current.zoom;
     };
     const up = (e: PointerEvent) => {
+      pointers.delete(e.pointerId);
+      if (pinch) { if (pointers.size < 2) pinch = null; drag = null; return; }
       if (drag && !drag.moved) {
         const rect = cv.getBoundingClientRect();
         const x = e.clientX - rect.left, y = e.clientY - rect.top;
-        let best: SkySelection = null, bd = 14;
+        let best: SkySelection = null, bd = e.pointerType === "touch" ? 26 : 14;
         for (const h of hit.current) { const d = Math.hypot(h.x - x, h.y - y); if (d < bd) { bd = d; best = h.sel; } }
         onSelect(best);
       }
@@ -178,9 +194,9 @@ export function SkyCanvas({ observer, options, selection, onSelect, focus }: { o
       if (e.key === "-") view.current.zoom = Math.max(0.6, view.current.zoom / 1.2);
       if (e.key === "0") view.current = { rot: 0, zoom: 1, panX: 0, panY: 0 };
     };
-    cv.addEventListener("pointerdown", down); cv.addEventListener("pointermove", move); cv.addEventListener("pointerup", up); cv.addEventListener("wheel", wheel, { passive: false }); window.addEventListener("keydown", key);
-    return () => { cv.removeEventListener("pointerdown", down); cv.removeEventListener("pointermove", move); cv.removeEventListener("pointerup", up); cv.removeEventListener("wheel", wheel); window.removeEventListener("keydown", key); };
+    cv.addEventListener("pointerdown", down); cv.addEventListener("pointermove", move); cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up); cv.addEventListener("wheel", wheel, { passive: false }); window.addEventListener("keydown", key);
+    return () => { cv.removeEventListener("pointerdown", down); cv.removeEventListener("pointermove", move); cv.removeEventListener("pointerup", up); cv.removeEventListener("pointercancel", up); cv.removeEventListener("wheel", wheel); window.removeEventListener("keydown", key); };
   }, [onSelect]);
 
-  return <canvas ref={canvas} className="h-full w-full cursor-crosshair touch-none" role="img" aria-label="All-sky chart for the selected observer and time. Drag to rotate, scroll to zoom, click an object to inspect. Arrow keys rotate, +/- zoom, 0 resets." />;
+  return <canvas ref={canvas} className="h-full w-full cursor-crosshair touch-none" role="img" aria-label="All-sky chart for the selected observer and time. Drag to rotate, scroll or pinch to zoom, click or tap an object to inspect. Arrow keys rotate, +/- zoom, 0 resets." />;
 }

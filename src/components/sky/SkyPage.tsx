@@ -1,4 +1,6 @@
 "use client";
+import { Sheet } from "@/components/shell/Sheet";
+import { useAmbient } from "@/lib/audio/useAudio";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SkyCanvas, type SkyOptions, type SkySelection } from "./SkyCanvas";
 import { InspectPanel } from "./InspectPanel";
@@ -11,6 +13,7 @@ import { allBodies, bodyState, moonPhaseName, skyCondition, applyHor, eqjToHorMa
 import { loadConstellations, loadStars } from "@/lib/astro/catalog";
 
 export default function SkyPage() {
+  useAmbient("sky");
   const observer = useApp((s) => s.observer);
   const sim = useSimNow(1000);
   const mode = useTime((s) => s.mode);
@@ -39,6 +42,7 @@ export default function SkyPage() {
   return (
     <div className="relative h-full w-full bg-space">
       <SkyCanvas observer={observer} options={opt} selection={sel} onSelect={onSelect} focus={focus} />
+      <Sheet title="Sky controls" openSignal={sel} testId="sky-sheet">
       <div className="pointer-events-none absolute left-4 top-20 flex flex-col gap-2">
         <div className="pointer-events-auto"><ObserverPicker /></div>
         <div className="glass pointer-events-auto w-[280px] px-3 py-2 text-[12px]">
@@ -50,13 +54,14 @@ export default function SkyPage() {
         </div>
         <div className="glass pointer-events-auto flex w-[280px] flex-wrap gap-x-3 gap-y-1 px-3 py-2 text-[11px]">
           {([["lines", "Constellations"], ["labels", "Labels"], ["grid", "Alt-az grid"], ["daylightStars", "Stars in daylight"]] as const).map(([k, l]) => (
-            <label key={k} className="flex items-center gap-1"><input type="checkbox" checked={opt[k]} onChange={(e) => setOpt({ ...opt, [k]: e.target.checked })} />{l}</label>
+            <label key={k} className="flex min-h-[32px] items-center gap-1.5 pointer-coarse:min-h-[44px]"><input type="checkbox" checked={opt[k]} onChange={(e) => setOpt({ ...opt, [k]: e.target.checked })} data-testid={`sky-opt-${k}`} />{l}</label>
           ))}
           <label className="flex w-full items-center gap-2">Mag limit <input type="range" min={2} max={6} step={0.5} value={opt.magLimit} onChange={(e) => setOpt({ ...opt, magLimit: +e.target.value })} aria-label="Magnitude limit" /><span className="mono">{opt.magLimit}</span></label>
         </div>
       </div>
       <div className="absolute right-4 top-20">{sel && <InspectPanel sel={sel} date={date} obs={observer} onClose={() => setSel(null)} />}</div>
       <div className="absolute bottom-16 left-1/2 -translate-x-1/2"><TimeControls /></div>
+      </Sheet>
     </div>
   );
 }

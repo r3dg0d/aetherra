@@ -1,4 +1,6 @@
 "use client";
+import { Sheet } from "@/components/shell/Sheet";
+import { useAmbient } from "@/lib/audio/useAudio";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type * as CesiumNS from "cesium";
@@ -18,6 +20,7 @@ function makeLayer(C: CesiumLib, id: Base, date: string) {
 }
 
 export default function EarthPage() {
+  useAmbient("earth");
   const { Cesium: C, error } = useCesium();
   const el = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<CesiumNS.Viewer | null>(null);
@@ -132,13 +135,14 @@ export default function EarthPage() {
           <input type="range" min={0.05} max={0.95} step={0.005} value={split} onChange={(e) => setSplit(+e.target.value)} aria-label="Compare slider" className="absolute left-1/2 top-1/2 w-40 -translate-x-1/2 -rotate-0 opacity-80" />
         </div>
       )}
+      <Sheet title="Layers & places" testId="earth-sheet">
       <div className="absolute left-4 top-20 z-20 w-[300px]">
         <div className="glass p-3">
-          <div className="mb-2 flex gap-1" role="tablist">{(["layers", "sites", "webcams"] as const).map((p) => <button key={p} role="tab" aria-selected={panel === p} className={`btn ${panel === p ? "btn-primary" : ""}`} onClick={() => setPanel(p)}>{p === "layers" ? "Imagery" : p === "sites" ? "Launch sites" : "Webcams"}</button>)}</div>
+          <div className="mb-2 flex gap-1" role="tablist">{(["layers", "sites", "webcams"] as const).map((p) => <button key={p} role="tab" aria-selected={panel === p} className={`btn ${panel === p ? "btn-primary" : ""}`} onClick={() => setPanel(p)} data-testid={`earth-tab-${p}`}>{p === "layers" ? "Imagery" : p === "sites" ? "Launch sites" : "Webcams"}</button>)}</div>
           {panel === "layers" && (
             <div className="space-y-2 text-[12px]">
               <label className="block"><span className="label">Base layer</span>
-                <select className="input mt-1 w-full" value={base} onChange={(e) => setBase(e.target.value)}><option value="osm">OpenStreetMap (street map)</option>{GIBS_LAYERS.map((g) => <option key={g.id} value={g.id}>{g.title}</option>)}</select></label>
+                <select className="input mt-1 w-full" value={base} onChange={(e) => setBase(e.target.value)} data-testid="earth-base-layer"><option value="osm">OpenStreetMap (street map)</option>{GIBS_LAYERS.map((g) => <option key={g.id} value={g.id}>{g.title}</option>)}</select></label>
               <label className="block"><span className="label">Compare with (split view)</span>
                 <select className="input mt-1 w-full" value={compare} onChange={(e) => setCompare(e.target.value)}><option value="">— none —</option><option value="osm">OpenStreetMap</option>{GIBS_LAYERS.map((g) => <option key={g.id} value={g.id}>{g.title}</option>)}</select></label>
               {daily && <label className="block"><span className="label">Imagery date (UTC)</span><input type="date" className="input mono mt-1 w-full" value={date} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)} /></label>}
@@ -149,7 +153,7 @@ export default function EarthPage() {
           )}
           {panel === "sites" && (
             <div className="text-[12px]">
-              <ul className="scroll-thin max-h-56 overflow-y-auto">{LAUNCH_SITES.map((s) => <li key={s.q}><button className={`w-full rounded px-2 py-1 text-left hover:bg-nebula/15 ${site?.q === s.q ? "bg-nebula/20" : ""}`} onClick={() => setSite(s)}>{s.name}</button></li>)}</ul>
+              <ul className="scroll-thin max-h-56 overflow-y-auto">{LAUNCH_SITES.map((s) => <li key={s.q}><button className={`min-h-[32px] w-full rounded px-2 py-1 text-left pointer-coarse:min-h-[44px] hover:bg-nebula/15 ${site?.q === s.q ? "bg-nebula/20" : ""}`} onClick={() => setSite(s)}>{s.name}</button></li>)}</ul>
               {site && (
                 <div className="mt-2 border-t hairline pt-2">
                   <p className="font-medium">{site.name}</p>
@@ -169,7 +173,8 @@ export default function EarthPage() {
           )}
         </div>
       </div>
-      <div className="absolute right-4 top-20 z-20"><DataBadge value="HISTORICAL" note="Map tiles and satellite imagery are archived products" /></div>
+      </Sheet>
+      <div className="ui-chrome absolute right-4 top-20 z-20 max-md:top-[calc(env(safe-area-inset-top)+64px)]"><DataBadge value="HISTORICAL" note="Map tiles and satellite imagery are archived products" /></div>
     </div>
   );
 }

@@ -15,6 +15,8 @@ function glowTexture() {
   return new THREE.CanvasTexture(c);
 }
 
+const SUN_HDR = new THREE.Color(3.2, 2.9, 2.5);
+
 /** Sun glow at the true solar direction and the Moon at its true (scaled) geocentric position. */
 export function SunMoon({ showMoon = true }: { showMoon?: boolean }) {
   const sun = useRef<THREE.Sprite>(null);
@@ -36,7 +38,7 @@ export function SunMoon({ showMoon = true }: { showMoon?: boolean }) {
     <>
       <directionalLight ref={light} intensity={2.2} />
       <ambientLight intensity={0.03} />
-      {tex && <sprite ref={sun} scale={[60, 60, 1]}><spriteMaterial map={tex} transparent depthWrite={false} blending={THREE.AdditiveBlending} /></sprite>}
+      {tex && <sprite ref={sun} scale={[60, 60, 1]}><spriteMaterial map={tex} color={SUN_HDR} toneMapped={false} transparent depthWrite={false} blending={THREE.AdditiveBlending} /></sprite>}
       {showMoon && (
         <mesh ref={moon} name="moon">
           <sphereGeometry args={[1737.4 / EARTH_RADIUS_KM, 48, 24]} />

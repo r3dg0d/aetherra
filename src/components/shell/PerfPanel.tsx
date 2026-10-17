@@ -1,21 +1,29 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useApp } from "@/lib/store/app";
+import { usePerf, resolveTier } from "@/lib/quality";
 
+/** Developer performance panel: FPS, frame-time percentiles, draw calls, DPR and effective quality tier. */
 export function PerfPanel() {
   const show = useApp((s) => s.showPerf);
-  const [fps, setFps] = useState(0);
-  const [mem, setMem] = useState<number | null>(null);
+  const quality = useApp((s) => s.quality);
+  const { autoTier, dpr, calls, triangles } = usePerf();
+  const [st, setSt] = useState({ fps: 0, p50: 0, p95: 0, mem: null as number | null });
   useEffect(() => {
     if (!show) return;
-    let frames = 0, last = performance.now(), raf = 0;
+    let raf = 0, last = performance.now(), windowStart = last;
+    const dts: number[] = [];
     const loop = () => {
-      frames++;
       const now = performance.now();
-      if (now - last >= 1000) {
-        setFps(Math.round((frames * 1000) / (now - last))); frames = 0; last = now;
+      dts.push(now - last); last = now;
+      if (now - windowStart >= 1000) {
+        const sorted = [...dts].sort((a, b) => a - b);
+        const pct = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))] ?? 0;
         const m = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory;
-        setMem(m ? m.usedJSHeapSize / 1048576 : null);
+        const fps = Math.round((dts.length * 1000) / (now - windowStart));
+        setSt({ fps, p50: pct(0.5), p95: pct(0.95), mem: m ? m.usedJSHeapSize / 1048576 : null });
+        usePerf.getState().setStats({ fps, frameMs: { p50: pct(0.5), p95: pct(0.95) } });
+        dts.length = 0; windowStart = now;
       }
       raf = requestAnimationFrame(loop);
     };
@@ -23,11 +31,16 @@ export function PerfPanel() {
     return () => cancelAnimationFrame(raf);
   }, [show]);
   if (!show) return null;
+  const tier = resolveTier(quality, autoTier);
   return (
-    <div className="glass mono fixed left-4 top-16 z-40 px-3 py-2 text-[11px]" aria-label="Performance">
-      <div><span className="label mr-2">FPS</span>{fps}</div>
-      {mem != null && <div><span className="label mr-2">HEAP</span>{mem.toFixed(0)} MB</div>}
-      <div><span className="label mr-2">DPR</span>{typeof window !== "undefined" ? window.devicePixelRatio : 1}</div>
+    <div className="glass mono fixed left-3 z-40 grid grid-cols-[auto_auto] gap-x-3 px-3 py-2 text-[11px]" style={{ top: "calc(env(safe-area-inset-top) + 64px)" }} aria-label="Performance" data-testid="perf-panel">
+      <span className="label">FPS</span><span className={st.fps < 30 ? "text-alert" : st.fps < 50 ? "text-sim" : "text-teal"}>{st.fps}</span>
+      <span className="label">Frame p50/p95</span><span>{st.p50.toFixed(1)} / {st.p95.toFixed(1)} ms</span>
+      <span className="label">Draw calls</span><span>{calls}</span>
+      <span className="label">Triangles</span><span>{(triangles / 1000).toFixed(0)}k</span>
+      <span className="label">DPR</span><span>{dpr.toFixed(2)}</span>
+      <span className="label">Quality</span><span>{tier}{quality === "auto" ? " (auto)" : ""}</span>
+      {st.mem != null && <><span className="label">Heap</span><span>{st.mem.toFixed(0)} MB</span></>}
     </div>
   );
 }
