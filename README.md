@@ -13,7 +13,7 @@
 [![CesiumJS](https://img.shields.io/badge/CesiumJS-1.140-86B049?logo=cesium&logoColor=white)](https://cesium.com/platform/cesiumjs/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.x-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/tests-71_unit_%2B_79_e2e-42E2D0)](#testing)
+[![Tests](https://img.shields.io/badge/tests-108_unit_%2B_112_e2e-42E2D0)](#testing)
 [![Build](https://img.shields.io/badge/build-production-7956FF)](#quick-start)
 
 ![AETHERRA home — 3D Earth with ISS orbit and next-launch countdown](screenshots/polish/home-desktop.png)
@@ -106,8 +106,8 @@ No database server? Set nothing: without `DATABASE_URL` the app uses an embedded
 ## Testing
 
 ```bash
-npm run lint && npm run typecheck && npm test   # ESLint, TypeScript, 71 unit tests
-npm run e2e                                     # 79 Playwright tests on desktop, iPhone, Android and iPad viewports
+npm run lint && npm run typecheck && npm test   # ESLint, TypeScript, 108 unit tests
+npm run e2e                                     # 112 Playwright tests on desktop, iPhone, Android and iPad viewports
 npm run screenshots:polish                      # refresh the screenshots used above
 npm run screenshots:imagery
 ```
