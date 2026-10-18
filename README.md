@@ -116,14 +116,15 @@ Unit tests cover coordinate transforms, astronomy against known references, SGP4
 
 ## Documentation
 
-- [Architecture](docs/architecture.md)
-- [AETHERRA Voice](docs/voice.md) — rendering engines, coordinate systems, provider design
+- [Features](FEATURES.md) — agent/engineer-facing feature inventory, providers, commands, testing counts
+- [Roadmap](ROADMAP.md) — current state, phased backlog, next-up priorities, agent working rules
+- [Architecture](docs/architecture.md) — rendering engines, coordinate systems, provider design
+- [AETHERRA Voice](docs/voice.md) — push-to-talk assistant, privacy, browser support
 - [Providers](docs/providers.md) — every data source, its licence, quota and fallback
 - [API](docs/api.md) — route contracts
 - [Privacy](docs/privacy.md) — what is collected (very little) and why
 - [Attribution](docs/attribution.md) — credits for data, catalogues and imagery
 - [Known limitations](docs/known-limitations.md) — read this before trusting a number
-- [Roadmap](docs/roadmap.md) — where AETHERRA goes next
 
 ## Project status
 
