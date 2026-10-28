@@ -14,6 +14,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.x-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Tests](https://img.shields.io/badge/tests-108_unit_%2B_112_e2e-42E2D0)](#testing)
+[![License: MIT](https://img.shields.io/badge/License-MIT-A78BFA.svg)](LICENSE)
 [![Build](https://img.shields.io/badge/build-production-7956FF)](#quick-start)
 
 ![AETHERRA home — 3D Earth with ISS orbit and next-launch countdown](screenshots/polish/home-desktop.png)
@@ -103,6 +104,10 @@ npm run build && npm start
 
 No database server? Set nothing: without `DATABASE_URL` the app uses an embedded database in `./.data/`. Web Push reminders need VAPID keys (`npx web-push generate-vapid-keys`); without them, reminders still arrive in the in-app inbox. Handy while exploring: `?nointro` skips the intro, and `H` hides the UI for screenshots. See [.env.example](.env.example) for every option.
 
+### Deploying publicly
+
+The defaults are fine for local use and small demos. For a public deployment, configure your own map tile and geocoding providers: the free OpenStreetMap tile servers and Nominatim have [usage policies](https://operations.osmfoundation.org/policies/) that don't allow heavy traffic. Also respect Launch Library 2's rate limits (or use an API key), and set real VAPID keys for Web Push.
+
 ## Testing
 
 ```bash
@@ -117,6 +122,8 @@ Unit tests cover coordinate transforms, astronomy against known references, SGP4
 ## Documentation
 
 - [Features](FEATURES.md) — agent/engineer-facing feature inventory, providers, commands, testing counts
+- [Contributing](CONTRIBUTING.md) — how to work on AETHERRA
+- [Security](SECURITY.md) — reporting vulnerabilities
 - [Roadmap](ROADMAP.md) — current state, phased backlog, next-up priorities, agent working rules
 - [Architecture](docs/architecture.md) — rendering engines, coordinate systems, provider design
 - [AETHERRA Voice](docs/voice.md) — push-to-talk assistant, privacy, browser support
@@ -130,7 +137,7 @@ Unit tests cover coordinate transforms, astronomy against known references, SGP4
 
 AETHERRA is an actively developed showcase build. The core experience — Earth, sky, orbits, flights, launches, planetary imagery and the ASCENT simulator — works end to end on real data, with automated tests and a green production build. Known gaps (authorized FAA data, embedded webcams, 3D buildings without a Cesium ion token) are listed honestly in [known limitations](docs/known-limitations.md).
 
-Imagery and data remain © their respective providers (NASA, JPL-Caltech, ESA and others) — see [attribution](docs/attribution.md).
+AETHERRA is released under the [MIT License](LICENSE). Imagery and data remain © their respective providers (NASA, JPL-Caltech, ESA and others) — see [attribution](docs/attribution.md).
 
 <div align="center">
 
